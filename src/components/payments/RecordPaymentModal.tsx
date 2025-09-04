@@ -128,6 +128,10 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
         switch (method) {
           case 'mpesa':
             return 'mobile_money';
+          case 'eft':
+            return 'eft';
+          case 'rtgs':
+            return 'rtgs';
           default:
             return method;
         }
