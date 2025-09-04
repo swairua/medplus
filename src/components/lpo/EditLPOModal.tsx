@@ -31,6 +31,7 @@ import {
 import { useUpdateLPOWithItems, useAllSuppliersAndCustomers, useProducts, useCompanies } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
 import { validateLPOEdit } from '@/utils/lpoValidation';
+import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 
 interface LPOItem {
   id: string;
