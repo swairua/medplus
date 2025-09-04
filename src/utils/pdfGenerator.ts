@@ -854,16 +854,22 @@ export const generatePDF = (data: DocumentData) => {
         </div>
         ` : ''}
 
-        <!-- Notes Section -->
-        ${data.notes ? `
+        <!-- Terms & Conditions (invoice only) -->
+        ${data.type === 'invoice' ? `
         <div class="notes-section">
-          <div class="notes">
-            <div class="section-subtitle">Notes</div>
-            <div class="notes-content">${data.notes}</div>
+          <div class="terms">
+            <div class="section-subtitle">Terms &amp; Conditions</div>
+            ${data.terms_and_conditions ? `
+              <div class="notes-content">${data.terms_and_conditions}</div>
+            ` : `
+              <div style="text-align:center; margin-top:8px;">
+                <img src="https://cdn.builder.io/api/v1/image/assets%2F1439be8c72a64da88fd510116fc53c98%2Fc972357b6175417f88b9d90d6687a9a1?format=webp&width=800" alt="Terms and Conditions" style="max-width:100%; height:auto;" onerror="this.style.display='none';" />
+              </div>
+            `}
           </div>
         </div>
         ` : ''}
-        
+
         <!-- Bank Details (invoice only) -->
         ${data.type === 'invoice' ? `
         <div class="bank-details" style="text-align: left;">
