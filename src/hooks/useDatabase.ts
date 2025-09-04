@@ -2003,9 +2003,17 @@ export const useUpdateLPOWithItems = () => {
 
       // Insert new items
       if (items.length > 0) {
+        // Build insertion payload explicitly to avoid sending `id: null` which can
+        // violate NOT NULL constraints if present in the incoming objects.
         const lpoItems = items.map((item, index) => ({
-          ...item,
-          id: undefined, // Let database generate new IDs
+          product_id: item.product_id,
+          description: item.description || item.product_name || null,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          tax_rate: item.tax_rate,
+          tax_amount: item.tax_amount,
+          line_total: item.line_total,
+          unit_of_measure: (item as any).unit_of_measure || null,
           lpo_id: lpoId,
           sort_order: index + 1,
         }));
