@@ -873,10 +873,20 @@ export const generatePDF = (data: DocumentData) => {
         </div>
         ` : ''}
         
-        <!-- Bank Details (only for invoices and quotations) -->
-        ${(data.type === 'invoice' || data.type === 'quotation') ? `
-        <div class="bank-details">
-          <strong>MAKE ALL PAYMENTS THROUGH MEDPLUS AFRICA, KCB RIVER ROAD BRANCH NUMBER : 1216348367 - SWIFT CODE; KCBLKENX - BANK CODE; 01 - BRANCH CODE; 114 ABSA BANK KENYA PLC: THIKA ROAD MALL BRANCH, ACC: 2051129930, BRANCH CODE; 024, SWIFT CODE; BARCKENX</strong>
+        <!-- Bank Details (invoice only) -->
+        ${data.type === 'invoice' ? `
+        <div class="bank-details" style="text-align: left;">
+          <div style="font-weight: 800; font-size: 12px; text-align: center; margin-bottom: 8px;">BANKING DETAILS</div>
+          <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
+            <tr><td style="padding: 4px 8px; width: 40%; font-weight: bold;">Account Name:</td><td style="padding: 4px 8px;">MEDPLUS AFRICA LIMITED</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Bank Name :</td><td style="padding: 4px 8px;">ABSA BANK</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Account No</td><td style="padding: 4px 8px;">2047138798</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Branch Name :</td><td style="padding: 4px 8px;">RONGAI</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Bank code  :</td><td style="padding: 4px 8px;">03</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Branch code :</td><td style="padding: 4px 8px;">52</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Swift code  :</td><td style="padding: 4px 8px;">BARCKENX</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Paybill No:</td><td style="padding: 4px 8px;">303030</td></tr>
+          </table>
         </div>
         ` : ''}
 
