@@ -80,6 +80,21 @@ const DEFAULT_COMPANY: CompanyDetails = {
   logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800' // Will use company settings or fallback gracefully
 };
 
+// Default terms and conditions (extracted from provided invoice image)
+const DEFAULT_TERMS_TEXT = `
+  <div style="text-align:left; font-size:11px; color:#333; line-height:1.4;">
+    <strong>Terms and regulations</strong>
+    <ol style="margin-top:8px; padding-left:18px;">
+      <li>The company shall have a general as well as particular lien on all goods for any unpaid A/C.</li>
+      <li>Cash transactions of any kind are not acceptable. All payments should be made by cheque, M-Pesa, or bank transfer only.</li>
+      <li>Claims and queries must be lodged with us within 21 days of dispatch of goods; otherwise they will not be accepted back.</li>
+      <li>Where applicable, transport will be invoiced separately.</li>
+      <li>The company will not be responsible for any loss or damage of goods in transit collected by the customer or sent via customer's courier A/C.</li>
+      <li>VAT is inclusive where applicable.</li>
+    </ol>
+  </div>
+`;
+
 // Helper function to determine which columns have values
 const analyzeColumns = (items: DocumentData['items']) => {
   if (!items || items.length === 0) return {};
@@ -859,13 +874,7 @@ export const generatePDF = (data: DocumentData) => {
         <div class="notes-section">
           <div class="terms">
             <div class="section-subtitle">Terms &amp; Conditions</div>
-            ${data.terms_and_conditions ? `
-              <div class="notes-content">${data.terms_and_conditions}</div>
-            ` : `
-              <div style="text-align:center; margin-top:8px;">
-                <img src="https://cdn.builder.io/api/v1/image/assets%2F1439be8c72a64da88fd510116fc53c98%2Fc972357b6175417f88b9d90d6687a9a1?format=webp&width=800" alt="Terms and Conditions" style="max-width:100%; height:auto;" onerror="this.style.display='none';" />
-              </div>
-            `}
+            <div class="notes-content">${data.terms_and_conditions || DEFAULT_TERMS_TEXT}</div>
           </div>
         </div>
         ` : ''}
