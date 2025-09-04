@@ -340,9 +340,15 @@ export const CreateLPOModal = ({
       onSuccess?.();
       handleClose();
     } catch (error) {
-      console.error('Error creating LPO:', error);
-      const message = parseErrorMessageWithCodes(error, 'LPO creation');
-      toast.error(message || 'Failed to create LPO. Please try again.');
+      // Log a readable error message
+      try {
+        const message = parseErrorMessageWithCodes(error, 'LPO creation');
+        console.error('Error creating LPO:', message, error);
+        toast.error(message || 'Failed to create LPO. Please try again.');
+      } catch (logErr) {
+        console.error('Error creating LPO:', String(error));
+        toast.error('Failed to create LPO. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
