@@ -145,8 +145,9 @@ export default function LPOs() {
       });
       toast.success(`LPO ${lpo.lpo_number} status updated to ${newStatus}`);
     } catch (error) {
-      console.error('Error updating LPO status:', error);
-      toast.error('Failed to update LPO status');
+      const message = parseErrorMessageWithCodes(error, 'LPO update');
+      console.error('Error updating LPO status:', message, error);
+      toast.error(message || 'Failed to update LPO status');
     }
   };
 
