@@ -58,7 +58,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [notes, setNotes] = useState('');
-  const [termsAndConditions, setTermsAndConditions] = useState('Payment due within 30 days of invoice date.');
+  const [termsAndConditions, setTermsAndConditions] = useState(`Prepared By:……………………………………………………….…………………. Checked By:………………………………………………...……….\n\nTerms and regulations\n1) The company shall have general as well as particular lien on all goods for any unpaid A/C\n2) Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only\n3) Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back\n4) Where applicable, transport will be invoiced seperately\n5) The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C\n6) The VAT is inclusive where applicable`);
   
   const [items, setItems] = useState<QuotationItem[]>([]);
   const [searchProduct, setSearchProduct] = useState('');
@@ -385,7 +385,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
     setQuotationDate(new Date().toISOString().split('T')[0]);
     setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     setNotes('');
-    setTermsAndConditions('Payment due within 30 days of invoice date.');
+    setTermsAndConditions(`Prepared By:……………………………………………………….…………………. Checked By:………………………………………………...……….\n\nTerms and regulations\n1) The company shall have general as well as particular lien on all goods for any unpaid A/C\n2) Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only\n3) Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back\n4) Where applicable, transport will be invoiced seperately\n5) The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C\n6) The VAT is inclusive where applicable`);
     setItems([]);
     setSearchProduct('');
   };
