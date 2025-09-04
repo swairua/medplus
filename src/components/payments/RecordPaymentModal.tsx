@@ -208,6 +208,10 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
         return <DollarSign className="h-4 w-4" />;
       case 'cheque':
         return <Receipt className="h-4 w-4" />;
+      case 'eft':
+        return <CreditCard className="h-4 w-4" />;
+      case 'rtgs':
+        return <CreditCard className="h-4 w-4" />;
       default:
         return <DollarSign className="h-4 w-4" />;
     }
