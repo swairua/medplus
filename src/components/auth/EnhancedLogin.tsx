@@ -168,9 +168,6 @@ export function EnhancedLogin() {
                 </div>
               </form>
 
-              <div className="mt-6">
-                <AutoAdminSetup />
-              </div>
             </TabsContent>
 
           </Tabs>
