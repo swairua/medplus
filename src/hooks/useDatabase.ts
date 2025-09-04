@@ -1622,11 +1622,33 @@ export const useCreateLPO = () => {
         const { data: userData } = await supabase.auth.getUser();
         const authUserId = userData?.user?.id || null;
         if (authUserId) {
-          lpoPayload.created_by = authUserId;
+          // Ensure the referenced user exists in the users table to avoid FK violations
+          try {
+            const { data: existingUser, error: userCheckError } = await supabase
+              .from('users')
+              .select('id')
+              .eq('id', authUserId)
+              .single();
+
+            if (userCheckError) {
+              console.warn('Could not verify auth user against users table:', userCheckError);
+              lpoPayload.created_by = null;
+            } else if (existingUser && existingUser.id) {
+              lpoPayload.created_by = authUserId;
+            } else {
+              // Auth user not present in users table - avoid FK violation
+              console.warn('Auth user id not found in users table, setting created_by to null:', authUserId);
+              lpoPayload.created_by = null;
+            }
+          } catch (e) {
+            console.warn('Error checking users table for auth user:', e);
+            lpoPayload.created_by = null;
+          }
         } else if (typeof lpoPayload.created_by === 'undefined') {
           lpoPayload.created_by = null;
         }
-      } catch {
+      } catch (outerErr) {
+        console.warn('Error while obtaining auth user for LPO creation:', outerErr);
         if (typeof lpoPayload.created_by === 'undefined') lpoPayload.created_by = null;
       }
 
