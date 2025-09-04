@@ -36,6 +36,7 @@ import { useCreateLPO, useGenerateLPONumber, useAllSuppliersAndCustomers, usePro
 import { toast } from 'sonner';
 import { validateLPO } from '@/utils/lpoValidation';
 import { validateSupplierSelection, ValidationResult } from '@/utils/customerSupplierValidation';
+import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 
 interface LPOItem {
   id: string;
@@ -340,7 +341,8 @@ export const CreateLPOModal = ({
       handleClose();
     } catch (error) {
       console.error('Error creating LPO:', error);
-      toast.error('Failed to create LPO. Please try again.');
+      const message = parseErrorMessageWithCodes(error, 'LPO creation');
+      toast.error(message || 'Failed to create LPO. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
