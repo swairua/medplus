@@ -73,29 +73,87 @@ CREATE POLICY "Users can delete stock movements for their company" ON stock_move
         )
     );
 
--- Recreate the update_product_stock function to ensure it works correctly
-CREATE OR REPLACE FUNCTION update_product_stock(
-    product_uuid UUID,
-    movement_type VARCHAR(50),
-    quantity DECIMAL(10,3)
-)
-RETURNS VOID AS $$
+-- Recreate the core update_product_stock functions to ensure they work correctly
+CREATE OR REPLACE FUNCTION public.update_product_stock_core(
+    p_product_uuid UUID,
+    p_movement_type TEXT,
+    p_quantity NUMERIC
+) RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_rows_updated INTEGER := 0;
 BEGIN
-    IF movement_type = 'IN' THEN
-        UPDATE products 
-        SET stock_quantity = COALESCE(stock_quantity, 0) + quantity,
-            updated_at = NOW()
-        WHERE id = product_uuid;
-    ELSIF movement_type = 'OUT' THEN
-        UPDATE products 
-        SET stock_quantity = GREATEST(COALESCE(stock_quantity, 0) - quantity, 0),
-            updated_at = NOW()
-        WHERE id = product_uuid;
-    ELSIF movement_type = 'ADJUSTMENT' THEN
-        UPDATE products 
-        SET stock_quantity = quantity,
-            updated_at = NOW()
-        WHERE id = product_uuid;
-    END IF;
+  p_movement_type := UPPER(p_movement_type);
+  IF p_movement_type NOT IN ('IN','OUT','ADJUSTMENT') THEN
+    RAISE EXCEPTION 'Invalid movement_type: %', p_movement_type;
+  END IF;
+
+  IF p_movement_type = 'IN' THEN
+    UPDATE products
+    SET stock_quantity = COALESCE(stock_quantity,0) + p_quantity,
+        updated_at = NOW()
+    WHERE id = p_product_uuid;
+  ELSIF p_movement_type = 'OUT' THEN
+    UPDATE products
+    SET stock_quantity = GREATEST(COALESCE(stock_quantity,0) - p_quantity, 0),
+        updated_at = NOW()
+    WHERE id = p_product_uuid;
+  ELSIF p_movement_type = 'ADJUSTMENT' THEN
+    UPDATE products
+    SET stock_quantity = p_quantity,
+        updated_at = NOW()
+    WHERE id = p_product_uuid;
+  END IF;
+
+  GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
+
+  IF v_rows_updated = 0 THEN
+    RETURN json_build_object('success', false, 'error', format('Product % not found', p_product_uuid));
+  END IF;
+
+  RETURN json_build_object('success', true);
+EXCEPTION WHEN OTHERS THEN
+  RETURN json_build_object('success', false, 'error', SQLERRM);
 END;
-$$ LANGUAGE plpgsql;
+$$;
+
+-- Wrapper: product_uuid, movement_type, quantity (NUMERIC)
+CREATE OR REPLACE FUNCTION public.update_product_stock(
+    product_uuid UUID,
+    movement_type TEXT,
+    quantity NUMERIC
+) RETURNS JSON LANGUAGE SQL SECURITY DEFINER AS $$
+  SELECT public.update_product_stock_core(product_uuid, movement_type, quantity);
+$$;
+
+-- Wrapper: movement_type, product_uuid, quantity (NUMERIC) - alternate order
+CREATE OR REPLACE FUNCTION public.update_product_stock(
+    movement_type TEXT,
+    product_uuid UUID,
+    quantity NUMERIC
+) RETURNS JSON LANGUAGE SQL SECURITY DEFINER AS $$
+  SELECT public.update_product_stock_core(product_uuid, movement_type, quantity);
+$$;
+
+-- Integer overloads
+CREATE OR REPLACE FUNCTION public.update_product_stock(
+    product_uuid UUID,
+    movement_type TEXT,
+    quantity INTEGER
+) RETURNS JSON LANGUAGE SQL SECURITY DEFINER AS $$
+  SELECT public.update_product_stock_core(product_uuid, movement_type, quantity::NUMERIC);
+$$;
+
+CREATE OR REPLACE FUNCTION public.update_product_stock(
+    movement_type TEXT,
+    product_uuid UUID,
+    quantity INTEGER
+) RETURNS JSON LANGUAGE SQL SECURITY DEFINER AS $$
+  SELECT public.update_product_stock_core(product_uuid, movement_type, quantity::NUMERIC);
+$$;
+
+-- Grant execute permissions
+GRANT EXECUTE ON FUNCTION public.update_product_stock_core(UUID, TEXT, NUMERIC) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.update_product_stock(UUID, TEXT, NUMERIC) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, NUMERIC) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.update_product_stock(UUID, TEXT, INTEGER) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, INTEGER) TO authenticated, anon;
