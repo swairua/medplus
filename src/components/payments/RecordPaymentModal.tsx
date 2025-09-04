@@ -400,6 +400,18 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                         <span>M-Pesa</span>
                       </div>
                     </SelectItem>
+                    <SelectItem value="eft">
+                      <div className="flex items-center space-x-2">
+                        <CreditCard className="h-4 w-4" />
+                        <span>EFT</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="rtgs">
+                      <div className="flex items-center space-x-2">
+                        <CreditCard className="h-4 w-4" />
+                        <span>RTGS</span>
+                      </div>
+                    </SelectItem>
                     <SelectItem value="cheque">
                       <div className="flex items-center space-x-2">
                         <Receipt className="h-4 w-4" />
