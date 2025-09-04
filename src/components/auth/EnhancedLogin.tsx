@@ -54,8 +54,9 @@ export function EnhancedLogin() {
 
 
       if (errorInfo.type === 'invalid_credentials') {
+        // Avoid suggesting admin setup since that section was removed
         setTimeout(() => {
-          toast.info('Tip: Use the "Create Admin User" button above if this is your first time setting up the system.');
+          toast.info('Invalid credentials. If you do not have an account, contact your administrator.');
         }, 2000);
       }
     } else {
