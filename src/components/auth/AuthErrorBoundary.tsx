@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, RefreshCw, Shield } from 'lucide-react';
+import { parseErrorMessage } from '@/utils/errorHelpers';
 
 interface Props {
   children: ReactNode;
@@ -20,12 +21,24 @@ export class AuthErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false, showDiagnostics: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, showDiagnostics: false };
+  static getDerivedStateFromError(error: any): State {
+    // Ensure error.message is readable (avoid [object Object])
+    try {
+      const parsed = parseErrorMessage(error);
+      return { hasError: true, error: new Error(parsed), showDiagnostics: false };
+    } catch {
+      return { hasError: true, error: new Error(String(error)), showDiagnostics: false };
+    }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Auth error boundary caught an error:', error, errorInfo);
+  componentDidCatch(error: any, errorInfo: React.ErrorInfo) {
+    // Log a readable error message
+    try {
+      const parsed = parseErrorMessage(error);
+      console.error('Auth error boundary caught an error:', parsed, errorInfo);
+    } catch (e) {
+      console.error('Auth error boundary caught an error:', String(error), errorInfo);
+    }
   }
 
   handleRetry = () => {

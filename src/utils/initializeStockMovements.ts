@@ -141,6 +141,47 @@ export async function createStockMovements(movements: Array<{
       console.error('Batch stock movements insert error:', error);
       console.error('Movement data sample:', movementData[0]);
 
+      // Attempt automated fixes for common schema issues (missing updated_at or cost_per_unit)
+      const lowerMsg = String(error.message || '').toLowerCase();
+      let attemptedFix = false;
+
+      try {
+        if (lowerMsg.includes('updated_at') || lowerMsg.includes("could not find the 'updated_at'")) {
+          // Try to add updated_at column and related trigger/function
+          console.warn('Detected missing updated_at column in stock_movements. Attempting to add column via fixStockMovementsSchema...');
+          const { fixStockMovementsSchema } = await import('./fixStockMovementsSchema');
+          const res = await fixStockMovementsSchema();
+          if (res && res.success) {
+            attemptedFix = true;
+          }
+        }
+
+        if (!attemptedFix && (lowerMsg.includes('cost_per_unit') || lowerMsg.includes('could not find the') && lowerMsg.includes('cost_per_unit'))) {
+          console.warn('Detected missing cost_per_unit column in stock_movements. Attempting to add column...');
+          // Add cost_per_unit column via RPC
+          await supabase.rpc('exec_sql', { sql: `ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS cost_per_unit DECIMAL(15,2);` });
+          attemptedFix = true;
+        }
+      } catch (fixErr) {
+        console.error('Automated stock_movements schema fix attempt failed:', fixErr);
+      }
+
+      if (attemptedFix) {
+        // Retry the insert once after attempted fix
+        const { data: retryData, error: retryError } = await supabase
+          .from('stock_movements')
+          .insert(movementData)
+          .select();
+
+        if (retryError) {
+          console.error('Retry after schema fix failed:', retryError);
+          // Fall through to specific handling below
+          error = retryError;
+        } else {
+          return { data: retryData, error: null };
+        }
+      }
+
       // Provide more specific error messages
       if (error.code === '23514') {
         const constraintError = new Error(`Check constraint violation: ${error.message}. The database constraints need to be fixed. Please use the StockMovementsConstraintFix component to resolve this issue.`);

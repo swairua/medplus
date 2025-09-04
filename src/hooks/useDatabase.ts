@@ -1622,11 +1622,33 @@ export const useCreateLPO = () => {
         const { data: userData } = await supabase.auth.getUser();
         const authUserId = userData?.user?.id || null;
         if (authUserId) {
-          lpoPayload.created_by = authUserId;
+          // Ensure the referenced user exists in the users table to avoid FK violations
+          try {
+            const { data: existingUser, error: userCheckError } = await supabase
+              .from('users')
+              .select('id')
+              .eq('id', authUserId)
+              .single();
+
+            if (userCheckError) {
+              console.warn('Could not verify auth user against users table:', userCheckError);
+              lpoPayload.created_by = null;
+            } else if (existingUser && existingUser.id) {
+              lpoPayload.created_by = authUserId;
+            } else {
+              // Auth user not present in users table - avoid FK violation
+              console.warn('Auth user id not found in users table, setting created_by to null:', authUserId);
+              lpoPayload.created_by = null;
+            }
+          } catch (e) {
+            console.warn('Error checking users table for auth user:', e);
+            lpoPayload.created_by = null;
+          }
         } else if (typeof lpoPayload.created_by === 'undefined') {
           lpoPayload.created_by = null;
         }
-      } catch {
+      } catch (outerErr) {
+        console.warn('Error while obtaining auth user for LPO creation:', outerErr);
         if (typeof lpoPayload.created_by === 'undefined') lpoPayload.created_by = null;
       }
 
@@ -1981,9 +2003,17 @@ export const useUpdateLPOWithItems = () => {
 
       // Insert new items
       if (items.length > 0) {
+        // Build insertion payload explicitly to avoid sending `id: null` which can
+        // violate NOT NULL constraints if present in the incoming objects.
         const lpoItems = items.map((item, index) => ({
-          ...item,
-          id: undefined, // Let database generate new IDs
+          product_id: item.product_id,
+          description: item.description || item.product_name || null,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          tax_rate: item.tax_rate,
+          tax_amount: item.tax_amount,
+          line_total: item.line_total,
+          unit_of_measure: (item as any).unit_of_measure || null,
           lpo_id: lpoId,
           sort_order: index + 1,
         }));

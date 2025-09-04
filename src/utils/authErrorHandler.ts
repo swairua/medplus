@@ -84,12 +84,24 @@ export function analyzeAuthError(error: AuthError | Error): AuthErrorInfo {
 export function handleAuthError(error: AuthError | Error): AuthErrorInfo {
   const errorInfo = analyzeAuthError(error);
   
-  // Log for debugging
-  console.error('Authentication error:', {
-    type: errorInfo.type,
-    message: errorInfo.message,
-    originalError: error
-  });
+  // Log for debugging (stringify original error for clarity)
+  try {
+    // Import parseErrorMessage to extract readable text
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { parseErrorMessage } = require('./errorHelpers');
+    const original = parseErrorMessage(error);
+    console.error('Authentication error:', {
+      type: errorInfo.type,
+      message: errorInfo.message,
+      originalError: original
+    });
+  } catch (logErr) {
+    console.error('Authentication error:', {
+      type: errorInfo.type,
+      message: errorInfo.message,
+      originalError: String(error)
+    });
+  }
 
   // Show appropriate toast
   if (errorInfo.retry) {

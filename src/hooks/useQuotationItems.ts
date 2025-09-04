@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 
 export interface QuotationItem {
   quotation_id: string;
@@ -316,9 +317,11 @@ export const useConvertQuotationToInvoice = () => {
           // Log any failed stock updates
           stockUpdateResults.forEach((result, index) => {
             if (result.status === 'rejected') {
-              console.error('Failed to update stock for product:', stockMovements[index].product_id, result.reason);
-            } else if (result.value.error) {
-              console.error('Stock update error for product:', stockMovements[index].product_id, result.value.error);
+              const msg = parseErrorMessageWithCodes(result.reason || result, 'stock update');
+              console.error(`Failed to update stock for product: ${stockMovements[index].product_id} - ${msg}`, result.reason || result);
+            } else if (result.value && result.value.error) {
+              const msg = parseErrorMessageWithCodes(result.value.error, 'stock update');
+              console.error(`Stock update error for product: ${stockMovements[index].product_id} - ${msg}`, result.value.error);
             }
           });
         }
@@ -467,8 +470,9 @@ export const useCreateInvoiceWithItems = () => {
                 console.error('Failed to update stock for product:', stockMovements[index].product_id, result.reason);
                 return true;
               }
-              if (result.status === 'fulfilled' && result.value.error) {
-                console.error('Stock update error for product:', stockMovements[index].product_id, result.value.error);
+              if (result.status === 'fulfilled' && result.value && result.value.error) {
+                const msg = parseErrorMessageWithCodes(result.value.error, 'stock update');
+                console.error(`Stock update error for product: ${stockMovements[index].product_id} - ${msg}`, result.value.error);
                 return true;
               }
               return false;
@@ -532,9 +536,11 @@ export const useUpdateInvoiceWithItems = () => {
         // Log any failed reverse stock updates
         reverseUpdateResults.forEach((result, index) => {
           if (result.status === 'rejected') {
-            console.error('Failed to reverse stock for product:', reverseMovements[index].product_id, result.reason);
-          } else if (result.value.error) {
-            console.error('Reverse stock update error for product:', reverseMovements[index].product_id, result.value.error);
+            const msg = parseErrorMessageWithCodes(result.reason || result, 'reverse stock update');
+            console.error(`Failed to reverse stock for product: ${reverseMovements[index].product_id} - ${msg}`, result.reason || result);
+          } else if (result.value && result.value.error) {
+            const msg = parseErrorMessageWithCodes(result.value.error, 'reverse stock update');
+            console.error(`Reverse stock update error for product: ${reverseMovements[index].product_id} - ${msg}`, result.value.error);
           }
         });
       }
@@ -616,9 +622,11 @@ export const useUpdateInvoiceWithItems = () => {
             // Log any failed new stock updates
             newStockUpdateResults.forEach((result, index) => {
               if (result.status === 'rejected') {
-                console.error('Failed to update stock for product:', stockMovements[index].product_id, result.reason);
-              } else if (result.value.error) {
-                console.error('Stock update error for product:', stockMovements[index].product_id, result.value.error);
+                const msg = parseErrorMessageWithCodes(result.reason || result, 'stock update');
+                console.error(`Failed to update stock for product: ${stockMovements[index].product_id} - ${msg}`, result.reason || result);
+              } else if (result.value && result.value.error) {
+                const msg = parseErrorMessageWithCodes(result.value.error, 'stock update');
+                console.error(`Stock update error for product: ${stockMovements[index].product_id} - ${msg}`, result.value.error);
               }
             });
           }

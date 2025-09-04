@@ -230,7 +230,7 @@ Website: www.biolegendscientific.co.ke`;
         total_amount: quotation.total_amount,
         paid_amount: 0,
         balance_due: quotation.total_amount,
-        terms_and_conditions: quotation.terms_and_conditions || 'Payment due within 30 days of invoice date.',
+        terms_and_conditions: quotation.terms_and_conditions || `Prepared By:……………………………………………………….…………………. Checked By:………………………………………………...……….\n\nTerms and regulations\n1) The company shall have general as well as particular lien on all goods for any unpaid A/C\n2) Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only\n3) Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back\n4) Where applicable, transport will be invoiced seperately\n5) The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C\n6) The VAT is inclusive where applicable`,
         notes: `Converted from quotation ${quotation.quotation_number}`,
         created_by: profile.id
       };

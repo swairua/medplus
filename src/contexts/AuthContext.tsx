@@ -491,11 +491,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         setTimeout(() => toast.success('Signed out successfully'), 0);
         console.log('🎉 Sign out complete!');
+
+        // Force a reload to ensure the app clears any cached auth state/UI
+        try {
+          // Use replace so browser history isn't cluttered
+          window.location.replace('/');
+          return;
+        } catch (reloadErr) {
+          console.warn('Could not reload after sign out:', reloadErr);
+        }
       }
     } catch (error) {
       logError('❌ Sign out exception:', error, { context: 'signOut' });
       setTimeout(() => toast.error('Error signing out'), 0);
     } finally {
+      // Ensure loading is cleared if the component is still mounted
       if (mountedRef.current) {
         setLoading(false);
       }

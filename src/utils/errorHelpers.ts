@@ -75,7 +75,16 @@ export function parseErrorMessageWithCodes(error: any, context?: string): string
         case '23505':
           return `Duplicate entry: ${context ? `${context} already exists` : 'This record already exists'}`;
         case '23503':
-          return `Invalid reference: ${context ? `Invalid ${context} reference` : 'Referenced record not found'}`;
+          // Foreign key violation - include any available details to help debugging
+          const detail = (error.details && typeof error.details === 'string')
+            ? ` - ${error.details}`
+            : (error.message && typeof error.message === 'string')
+              ? ` - ${error.message}`
+              : (error.hint && typeof error.hint === 'string')
+                ? ` - ${error.hint}`
+                : '';
+
+          return `Invalid reference: ${context ? `Invalid ${context} reference` : 'Referenced record not found'}${detail}`;
         case '23514':
           return `Invalid data: ${context ? `Invalid ${context} data` : 'Data validation failed'}`;
         case '42703':

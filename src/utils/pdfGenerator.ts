@@ -80,6 +80,25 @@ const DEFAULT_COMPANY: CompanyDetails = {
   logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800' // Will use company settings or fallback gracefully
 };
 
+// Default terms and conditions (extracted from provided invoice image)
+const DEFAULT_TERMS_TEXT = `
+  <div style="text-align:left; font-size:11px; color:#333; line-height:1.4;">
+    <div style="margin-bottom:8px;">
+      <strong>Prepared By:</strong>……………………………………………………….………………….&nbsp;&nbsp;&nbsp;
+      <strong>Checked By:</strong>………………………………………………...……….
+    </div>
+    <strong>Terms and regulations</strong>
+    <ol style="margin-top:8px; padding-left:18px;">
+      <li>The company shall have general as well as particular lien on all goods for any unpaid A/C</li>
+      <li>Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only</li>
+      <li>Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back</li>
+      <li>Where applicable, transport will be invoiced seperately</li>
+      <li>The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C</li>
+      <li>The VAT is inclusive where applicable</li>
+    </ol>
+  </div>
+`;
+
 // Helper function to determine which columns have values
 const analyzeColumns = (items: DocumentData['items']) => {
   if (!items || items.length === 0) return {};
@@ -854,29 +873,30 @@ export const generatePDF = (data: DocumentData) => {
         </div>
         ` : ''}
 
-        <!-- Notes Section -->
-        ${data.notes || data.terms_and_conditions ? `
+        <!-- Terms & Conditions (invoice only) -->
+        ${data.type === 'invoice' ? `
         <div class="notes-section">
-          ${data.notes ? `
-          <div class="notes">
-            <div class="section-subtitle">Notes</div>
-            <div class="notes-content">${data.notes}</div>
-          </div>
-          ` : ''}
-          
-          ${data.terms_and_conditions ? `
           <div class="terms">
-            <div class="section-subtitle">Terms & Conditions</div>
-            <div class="terms-content">${data.terms_and_conditions}</div>
+            <div class="section-subtitle">Terms &amp; Conditions</div>
+            <div class="notes-content">${data.terms_and_conditions || DEFAULT_TERMS_TEXT}</div>
           </div>
-          ` : ''}
         </div>
         ` : ''}
-        
-        <!-- Bank Details (only for invoices and quotations) -->
-        ${(data.type === 'invoice' || data.type === 'quotation') ? `
-        <div class="bank-details">
-          <strong>MAKE ALL PAYMENTS THROUGH MEDPLUS AFRICA, KCB RIVER ROAD BRANCH NUMBER : 1216348367 - SWIFT CODE; KCBLKENX - BANK CODE; 01 - BRANCH CODE; 114 ABSA BANK KENYA PLC: THIKA ROAD MALL BRANCH, ACC: 2051129930, BRANCH CODE; 024, SWIFT CODE; BARCKENX</strong>
+
+        <!-- Bank Details (invoice only) -->
+        ${data.type === 'invoice' ? `
+        <div class="bank-details" style="text-align: left;">
+          <div style="font-weight: 800; font-size: 12px; text-align: center; margin-bottom: 8px;">BANKING DETAILS</div>
+          <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
+            <tr><td style="padding: 4px 8px; width: 40%; font-weight: bold;">Account Name:</td><td style="padding: 4px 8px;">MEDPLUS AFRICA LIMITED</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Bank Name :</td><td style="padding: 4px 8px;">ABSA BANK</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Account No</td><td style="padding: 4px 8px;">2047138798</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Branch Name :</td><td style="padding: 4px 8px;">RONGAI</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Bank code  :</td><td style="padding: 4px 8px;">03</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Branch code :</td><td style="padding: 4px 8px;">52</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Swift code  :</td><td style="padding: 4px 8px;">BARCKENX</td></tr>
+            <tr><td style="padding: 4px 8px; font-weight: bold;">Paybill No:</td><td style="padding: 4px 8px;">303030</td></tr>
+          </table>
         </div>
         ` : ''}
 
@@ -884,7 +904,6 @@ export const generatePDF = (data: DocumentData) => {
         <div class="footer">
           <strong>Thank you for your business!</strong><br>
           <strong>${company.name}</strong><br>
-          This document was generated on ${new Date().toLocaleString()}
           ${data.type === 'proforma' ? '<br><em>This is a proforma invoice and not a request for payment</em>' : ''}
           ${data.type === 'delivery' ? '<br><em>This delivery note confirms the items delivered</em>' : ''}
           ${data.type === 'receipt' ? '<br><em>This receipt serves as proof of payment received</em>' : ''}
@@ -1107,6 +1126,10 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
   // Calculate final balance from last transaction
   const finalBalance = statementItems.length > 0 ? statementItems[statementItems.length - 1].line_total : 0;
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 2 }).format(amount);
+  };
+
   const documentData: DocumentData = {
     type: 'statement', // Use statement type for proper formatting
     number: `STMT-${customer.customer_code || customer.id}-${statementDate}`,
@@ -1124,7 +1147,7 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
     subtotal: finalBalance,
     tax_amount: 0,
     total_amount: finalBalance,
-    notes: `Statement of Account as of ${new Date(statementDate).toLocaleDateString()}\n\nThis statement shows all transactions including invoices (debits) and payments (credits) with running balance.\n\nAging Summary for Outstanding Invoices:\nCurrent: $${current.toFixed(2)}\n1-30 Days: $${days30.toFixed(2)}\n31-60 Days: $${days60.toFixed(2)}\n61-90 Days: $${days90.toFixed(2)}\nOver 90 Days: $${over90.toFixed(2)}`,
+    notes: `Statement of Account as of ${new Date(statementDate).toLocaleDateString()}\n\nThis statement shows all transactions including invoices (debits) and payments (credits) with running balance.\n\nAging Summary for Outstanding Invoices:\nCurrent: ${formatCurrency(current)}\n1-30 Days: ${formatCurrency(days30)}\n31-60 Days: ${formatCurrency(days60)}\n61-90 Days: ${formatCurrency(days90)}\nOver 90 Days: ${formatCurrency(over90)}`,
     terms_and_conditions: 'Please remit payment for any outstanding amounts. Contact us if you have any questions about this statement.',
   };
 

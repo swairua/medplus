@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { toast } from 'sonner';
-import { AutoAdminSetup } from './AutoAdminSetup';
 import { handleAuthError } from '@/utils/authErrorHandler';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -55,8 +54,9 @@ export function EnhancedLogin() {
 
 
       if (errorInfo.type === 'invalid_credentials') {
+        // Avoid suggesting admin setup since that section was removed
         setTimeout(() => {
-          toast.info('Tip: Use the "Create Admin User" button above if this is your first time setting up the system.');
+          toast.info('Invalid credentials. If you do not have an account, contact your administrator.');
         }, 2000);
       }
     } else {
@@ -169,9 +169,6 @@ export function EnhancedLogin() {
                 </div>
               </form>
 
-              <div className="mt-6">
-                <AutoAdminSetup />
-              </div>
             </TabsContent>
 
           </Tabs>

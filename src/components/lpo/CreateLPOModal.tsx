@@ -36,6 +36,7 @@ import { useCreateLPO, useGenerateLPONumber, useAllSuppliersAndCustomers, usePro
 import { toast } from 'sonner';
 import { validateLPO } from '@/utils/lpoValidation';
 import { validateSupplierSelection, ValidationResult } from '@/utils/customerSupplierValidation';
+import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 
 interface LPOItem {
   id: string;
@@ -330,6 +331,12 @@ export const CreateLPOModal = ({
         line_total: item.line_total,
       }));
 
+      // Validate product references exist in the current product list to avoid FK violations
+      const invalidItem = lpoItems.find(i => i.product_id && !products?.some(p => p.id === i.product_id));
+      if (invalidItem) {
+        throw new Error(`Invalid product reference: ${invalidItem.product_id} for item "${invalidItem.description || 'unknown'}"`);
+      }
+
       await createLPO.mutateAsync({
         lpo: lpoData,
         items: lpoItems
@@ -339,8 +346,15 @@ export const CreateLPOModal = ({
       onSuccess?.();
       handleClose();
     } catch (error) {
-      console.error('Error creating LPO:', error);
-      toast.error('Failed to create LPO. Please try again.');
+      // Log a readable error message
+      try {
+        const message = parseErrorMessageWithCodes(error, 'LPO creation');
+        console.error('Error creating LPO:', message, error);
+        toast.error(message || 'Failed to create LPO. Please try again.');
+      } catch (logErr) {
+        console.error('Error creating LPO:', String(error));
+        toast.error('Failed to create LPO. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

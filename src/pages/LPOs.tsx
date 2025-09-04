@@ -33,6 +33,7 @@ import {
 import { toast } from 'sonner';
 import { useLPOs, useUpdateLPO, useCompanies } from '@/hooks/useDatabase';
 import { downloadLPOPDF } from '@/utils/pdfGenerator';
+import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { CreateLPOModal } from '@/components/lpo/CreateLPOModal';
 import { ViewLPOModal } from '@/components/lpo/ViewLPOModal';
 import { EditLPOModal } from '@/components/lpo/EditLPOModal';
@@ -145,8 +146,9 @@ export default function LPOs() {
       });
       toast.success(`LPO ${lpo.lpo_number} status updated to ${newStatus}`);
     } catch (error) {
-      console.error('Error updating LPO status:', error);
-      toast.error('Failed to update LPO status');
+      const message = parseErrorMessageWithCodes(error, 'LPO update');
+      console.error('Error updating LPO status:', message, error);
+      toast.error(message || 'Failed to update LPO status');
     }
   };
 

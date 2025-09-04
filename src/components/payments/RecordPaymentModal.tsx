@@ -128,6 +128,10 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
         switch (method) {
           case 'mpesa':
             return 'mobile_money';
+          case 'eft':
+            return 'eft';
+          case 'rtgs':
+            return 'rtgs';
           default:
             return method;
         }
@@ -204,6 +208,10 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
         return <DollarSign className="h-4 w-4" />;
       case 'cheque':
         return <Receipt className="h-4 w-4" />;
+      case 'eft':
+        return <CreditCard className="h-4 w-4" />;
+      case 'rtgs':
+        return <CreditCard className="h-4 w-4" />;
       default:
         return <DollarSign className="h-4 w-4" />;
     }
@@ -398,6 +406,18 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                       <div className="flex items-center space-x-2">
                         <DollarSign className="h-4 w-4" />
                         <span>M-Pesa</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="eft">
+                      <div className="flex items-center space-x-2">
+                        <CreditCard className="h-4 w-4" />
+                        <span>EFT</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="rtgs">
+                      <div className="flex items-center space-x-2">
+                        <CreditCard className="h-4 w-4" />
+                        <span>RTGS</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="cheque">
