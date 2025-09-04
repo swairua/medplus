@@ -331,6 +331,12 @@ export const CreateLPOModal = ({
         line_total: item.line_total,
       }));
 
+      // Validate product references exist in the current product list to avoid FK violations
+      const invalidItem = lpoItems.find(i => i.product_id && !products?.some(p => p.id === i.product_id));
+      if (invalidItem) {
+        throw new Error(`Invalid product reference: ${invalidItem.product_id} for item "${invalidItem.description || 'unknown'}"`);
+      }
+
       await createLPO.mutateAsync({
         lpo: lpoData,
         items: lpoItems
