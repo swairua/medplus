@@ -36,6 +36,7 @@ import { useCreateLPO, useGenerateLPONumber, useAllSuppliersAndCustomers, usePro
 import { toast } from 'sonner';
 import { validateLPO } from '@/utils/lpoValidation';
 import { validateSupplierSelection, ValidationResult } from '@/utils/customerSupplierValidation';
+import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 
 interface LPOItem {
   id: string;
