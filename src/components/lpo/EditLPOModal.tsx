@@ -228,8 +228,10 @@ export const EditLPOModal = ({
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error updating LPO:', error);
-      toast.error('Failed to update LPO. Please try again.');
+      // Parse and display a readable error message
+      const message = parseErrorMessageWithCodes(error, 'LPO update');
+      console.error('Error updating LPO:', message, error);
+      toast.error(message || 'Failed to update LPO. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
