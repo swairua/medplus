@@ -131,8 +131,11 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
         // Check authentication first
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError) {
-          console.error('Authentication error:', authError);
-          throw new Error(`Authentication failed: ${authError.message}`);
+          // Use parseErrorMessage to extract useful text
+          const { parseErrorMessage } = await import('@/utils/errorHelpers');
+          const parsed = parseErrorMessage(authError);
+          console.error('Authentication error:', parsed, authError);
+          throw new Error(`Authentication failed: ${parsed}`);
         }
         if (!user) {
           throw new Error('User not authenticated');
