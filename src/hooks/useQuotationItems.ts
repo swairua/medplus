@@ -911,11 +911,23 @@ export const useConvertQuotationToProforma = () => {
         created_by: createdBy
       };
 
-      const { data: proforma, error: proformaError } = await supabase
+      let { data: proforma, error: proformaError } = await supabase
         .from('proforma_invoices')
         .insert([proformaData])
         .select()
         .single();
+
+      // Fallback: if FK violation on created_by, retry with created_by = null
+      if (proformaError && proformaError.code === '23503' && String(proformaError.message || '').includes('created_by')) {
+        const retryPayload = { ...proformaData, created_by: null };
+        const retryRes = await supabase
+          .from('proforma_invoices')
+          .insert([retryPayload])
+          .select()
+          .single();
+        proforma = retryRes.data;
+        proformaError = retryRes.error as any;
+      }
 
       if (proformaError) throw proformaError;
 
