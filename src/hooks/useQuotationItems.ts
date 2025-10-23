@@ -242,12 +242,24 @@ export const useConvertQuotationToInvoice = () => {
         created_by: createdBy
       };
 
-      const { data: invoice, error: invoiceError } = await supabase
+      let { data: invoice, error: invoiceError } = await supabase
         .from('invoices')
         .insert([invoiceData])
         .select()
         .single();
-      
+
+      // Fallback: if FK violation on created_by, retry with created_by = null
+      if (invoiceError && invoiceError.code === '23503' && String(invoiceError.message || '').includes('created_by')) {
+        const retryPayload = { ...invoiceData, created_by: null };
+        const retryRes = await supabase
+          .from('invoices')
+          .insert([retryPayload])
+          .select()
+          .single();
+        invoice = retryRes.data;
+        invoiceError = retryRes.error as any;
+      }
+
       if (invoiceError) throw invoiceError;
       
       // Create invoice items from quotation items
