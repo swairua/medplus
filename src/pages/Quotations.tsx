@@ -428,21 +428,37 @@ Website: www.biolegendscientific.co.ke`;
                               size="sm"
                               onClick={() => handleSendQuotation(quotation)}
                               className="bg-primary-light text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground"
+                              disabled={convertToProforma.isPending || convertToInvoice.isPending}
                             >
                               <Send className="h-4 w-4 mr-1" />
                               <span className="hidden sm:inline">Send</span>
                             </Button>
                           )}
-                          {quotation.status === 'accepted' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleConvertToInvoice(quotation)}
-                              className="bg-success-light text-success border-success/20 hover:bg-success hover:text-success-foreground"
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              <span className="hidden sm:inline">Convert</span>
-                            </Button>
+                          {quotation.status !== 'converted' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleConvertToProforma(quotation)}
+                                className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white"
+                                disabled={convertToProforma.isPending || convertToInvoice.isPending}
+                                title="Convert to Proforma Invoice"
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                <span className="hidden sm:inline">Proforma</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleConvertToInvoice(quotation)}
+                                className="bg-success-light text-success border-success/20 hover:bg-success hover:text-success-foreground"
+                                disabled={convertToProforma.isPending || convertToInvoice.isPending}
+                                title="Convert directly to Invoice"
+                              >
+                                <Receipt className="h-4 w-4 mr-1" />
+                                <span className="hidden sm:inline">Invoice</span>
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
