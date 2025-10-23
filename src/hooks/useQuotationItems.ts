@@ -858,3 +858,107 @@ export const useCreateDeliveryNote = () => {
     },
   });
 };
+
+// Convert quotation to proforma invoice
+export const useConvertQuotationToProforma = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (quotationId: string) => {
+      // Get quotation data
+      const { data: quotation, error: quotationError } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          quotation_items(*)
+        `)
+        .eq('id', quotationId)
+        .single();
+
+      if (quotationError) throw quotationError;
+
+      // Generate proforma number
+      const { data: proformaNumber } = await supabase.rpc('generate_proforma_number', {
+        company_uuid: quotation.company_id
+      });
+
+      // Create proforma from quotation
+      let createdBy: string | null = null;
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        createdBy = userData?.user?.id || null;
+      } catch {
+        createdBy = null;
+      }
+
+      const validUntilDate = new Date(quotation.valid_until || Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      const proformaData = {
+        company_id: quotation.company_id,
+        customer_id: quotation.customer_id,
+        proforma_number: proformaNumber,
+        proforma_date: new Date().toISOString().split('T')[0],
+        valid_until: validUntilDate.toISOString().split('T')[0],
+        status: 'draft',
+        subtotal: quotation.subtotal,
+        tax_amount: quotation.tax_amount,
+        total_amount: quotation.total_amount,
+        notes: `Converted from quotation ${quotation.quotation_number}`,
+        terms_and_conditions: quotation.terms_and_conditions,
+        created_by: createdBy
+      };
+
+      const { data: proforma, error: proformaError } = await supabase
+        .from('proforma_invoices')
+        .insert([proformaData])
+        .select()
+        .single();
+
+      if (proformaError) throw proformaError;
+
+      // Create proforma items from quotation items
+      if (quotation.quotation_items && quotation.quotation_items.length > 0) {
+        const proformaItems = quotation.quotation_items.map((item: any) => ({
+          proforma_id: proforma.id,
+          product_id: item.product_id,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_percentage: item.discount_percentage || 0,
+          tax_percentage: item.tax_percentage,
+          tax_amount: item.tax_amount,
+          tax_inclusive: item.tax_inclusive,
+          line_total: item.line_total,
+          sort_order: item.sort_order
+        }));
+
+        let { error: itemsError } = await supabase
+          .from('proforma_items')
+          .insert(proformaItems);
+
+        if (itemsError) {
+          const msg = (itemsError.message || JSON.stringify(itemsError)).toLowerCase();
+          if (msg.includes('discount_percentage')) {
+            const minimalItems = proformaItems.map(({ discount_percentage, ...rest }) => rest);
+            const retry = await supabase.from('proforma_items').insert(minimalItems);
+            if (retry.error) throw retry.error;
+          } else {
+            throw itemsError;
+          }
+        }
+      }
+
+      // Update quotation status
+      await supabase
+        .from('quotations')
+        .update({ status: 'converted' })
+        .eq('id', quotationId);
+
+      return proforma;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      queryClient.invalidateQueries({ queryKey: ['proforma_invoices'] });
+    },
+  });
+};
