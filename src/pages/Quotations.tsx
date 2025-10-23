@@ -202,70 +202,21 @@ Website: www.biolegendscientific.co.ke`;
     }
   };
 
+  const handleConvertToProforma = async (quotation: Quotation) => {
+    try {
+      await convertToProforma.mutateAsync(quotation.id);
+      refetch();
+    } catch (error) {
+      console.error('Error converting quotation to proforma:', error);
+    }
+  };
+
   const handleConvertToInvoice = async (quotation: Quotation) => {
     try {
-      // Validate required fields
-      if (!currentCompany?.id) {
-        toast.error('No company selected. Please ensure you are associated with a company.');
-        return;
-      }
-
-      if (!profile?.id) {
-        toast.error('User not authenticated. Please sign in and try again.');
-        return;
-      }
-
-      if (!quotation.customers?.id) {
-        toast.error('Invalid customer data. Cannot convert quotation to invoice.');
-        return;
-      }
-
-      // TODO: In a real app, this would create an invoice from the quotation data
-      const invoiceData = {
-        company_id: currentCompany.id,
-        customer_id: quotation.customers.id,
-        quotation_id: quotation.id,
-        invoice_date: new Date().toISOString().split('T')[0],
-        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        status: 'draft',
-        subtotal: quotation.subtotal || 0,
-        tax_amount: quotation.tax_amount || 0,
-        total_amount: quotation.total_amount,
-        paid_amount: 0,
-        balance_due: quotation.total_amount,
-        terms_and_conditions: quotation.terms_and_conditions || `Prepared By:……………………………………………………….…………………. Checked By:………………………………………………...……….\n\nTerms and regulations\n1) The company shall have general as well as particular lien on all goods for any unpaid A/C\n2) Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only\n3) Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back\n4) Where applicable, transport will be invoiced seperately\n5) The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C\n6) The VAT is inclusive where applicable`,
-        notes: `Converted from quotation ${quotation.quotation_number}`,
-        created_by: profile.id
-      };
-
-      // Simulate conversion
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      toast.success(`Quotation ${quotation.quotation_number} converted to invoice successfully!`);
-
-      // TODO: Navigate to the new invoice or refresh quotations
+      await convertToInvoice.mutateAsync(quotation.id);
       refetch();
     } catch (error) {
       console.error('Error converting quotation to invoice:', error);
-
-      let errorMessage = 'Please try again.';
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (error && typeof error === 'object') {
-        const supabaseError = error as any;
-        if (supabaseError.message) {
-          errorMessage = supabaseError.message;
-        } else if (supabaseError.details) {
-          errorMessage = supabaseError.details;
-        } else if (supabaseError.hint) {
-          errorMessage = supabaseError.hint;
-        } else {
-          errorMessage = JSON.stringify(error);
-        }
-      }
-
-      toast.error(`Failed to convert quotation to invoice: ${errorMessage}`);
     }
   };
 
