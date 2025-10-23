@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useConvertQuotationToProforma, useConvertQuotationToInvoice } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
 import { CreateQuotationModal } from '@/components/quotations/CreateQuotationModal';
 import { ViewQuotationModal } from '@/components/quotations/ViewQuotationModal';
