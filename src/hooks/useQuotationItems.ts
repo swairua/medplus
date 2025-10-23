@@ -878,9 +878,11 @@ export const useConvertQuotationToProforma = () => {
       if (quotationError) throw quotationError;
 
       // Generate proforma number
-      const { data: proformaNumber } = await supabase.rpc('generate_proforma_number', {
+      const { data: proformaNumber, error: proformaNumberError } = await supabase.rpc('generate_proforma_number', {
         company_uuid: quotation.company_id
       });
+
+      if (proformaNumberError) throw proformaNumberError;
 
       // Create proforma from quotation
       let createdBy: string | null = null;
@@ -956,9 +958,15 @@ export const useConvertQuotationToProforma = () => {
 
       return proforma;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
       queryClient.invalidateQueries({ queryKey: ['proforma_invoices'] });
+      toast.success(`Quotation converted to proforma invoice ${data.proforma_number} successfully!`);
+    },
+    onError: (error) => {
+      const errorMessage = parseErrorMessageWithCodes(error, 'convert quotation to proforma');
+      console.error('Error converting quotation to proforma:', errorMessage);
+      toast.error(`Error converting quotation to proforma: ${errorMessage}`);
     },
   });
 };
