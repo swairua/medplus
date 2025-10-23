@@ -40,8 +40,8 @@ const sidebarItems: SidebarItem[] = [
     icon: Receipt,
     children: [
       { title: 'Quotations', icon: FileText, href: '/quotations' },
-      { title: 'Invoices', icon: Receipt, href: '/invoices' },
       { title: 'Proforma Invoices', icon: FileCheck, href: '/proforma' },
+      { title: 'Invoices', icon: Receipt, href: '/invoices' },
       { title: 'Credit Notes', icon: RotateCcw, href: '/credit-notes' }
     ]
   },
