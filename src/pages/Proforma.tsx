@@ -151,6 +151,16 @@ export default function Proforma() {
     refetch();
   };
 
+  const handleDeleteProforma = async (proforma: ProformaWithItems) => {
+    try {
+      await deleteProforma.mutateAsync(proforma.id!);
+      refetch();
+      setSelectedProforma(null);
+    } catch (error) {
+      console.error('Error deleting proforma:', error);
+    }
+  };
+
   const handleFilter = () => {
     toast.info('Advanced filter functionality coming soon!');
   };
