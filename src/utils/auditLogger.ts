@@ -173,3 +173,43 @@ export async function logUserApproval(
 
   await insertAuditLog(entry);
 }
+
+export async function logRoleChange(
+  action: 'create' | 'update' | 'delete',
+  roleId: string,
+  roleName: string,
+  companyId: string,
+  details?: any
+): Promise<void> {
+  // Ensure table exists (best-effort)
+  try {
+    await ensureAuditLogSchema();
+  } catch {
+    // ignore
+  }
+
+  const { user_id: actor_user_id, email: actor_email } = await getActorInfo();
+
+  const actionMap: Record<'create' | 'update' | 'delete', 'CREATE' | 'APPROVE' | 'DELETE'> = {
+    create: 'CREATE',
+    update: 'APPROVE',
+    delete: 'DELETE',
+  };
+
+  const entry: AuditLogEntry = {
+    action: actionMap[action],
+    entity_type: 'role',
+    record_id: roleId,
+    company_id: companyId,
+    actor_user_id,
+    actor_email,
+    details: {
+      role_name: roleName,
+      action_type: action,
+      timestamp: new Date().toISOString(),
+      ...details,
+    },
+  };
+
+  await insertAuditLog(entry);
+}
