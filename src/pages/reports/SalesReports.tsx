@@ -49,7 +49,7 @@ export default function SalesReports() {
   const [reportType, setReportType] = useState('overview');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [creatorFilter, setCreatorFilter] = useState<string | null>(null);
+  const [creatorFilter, setCreatorFilter] = useState<string>('all');
 
   const companyId = useCurrentCompanyId();
   const { users, fetchUsers } = useUserManagement();
