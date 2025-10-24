@@ -55,6 +55,7 @@ export default function SalesReports() {
 
   const companyId = useCurrentCompanyId();
   const { users, fetchUsers } = useUserManagement();
+  const { can: canViewReports, can: canExportReports, loading: permissionsLoading } = usePermissions();
 
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(companyId);
   const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers(companyId);
