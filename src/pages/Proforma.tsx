@@ -476,6 +476,37 @@ export default function Proforma() {
         onSendEmail={handleSendEmail}
         onCreateInvoice={handleCreateInvoice}
       />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Proforma Invoice</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete proforma invoice {proformaToDelete?.proforma_number}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction
+            onClick={async () => {
+              if (!proformaToDelete) return;
+              try {
+                await deleteProforma.mutateAsync(proformaToDelete.id!);
+                setShowDeleteDialog(false);
+                refetch();
+                setSelectedProforma(null);
+                toast.success('Proforma deleted');
+              } catch (e) {
+                console.error('Delete failed:', e);
+                toast.error('Failed to delete proforma');
+              }
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={deleteProforma.isPending}
+          >
+            {deleteProforma.isPending ? 'Deleting...' : 'Delete'}
+          </AlertDialogAction>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
