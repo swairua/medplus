@@ -2,6 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// Store instance in a module-level variable to prevent re-initialization
+let supabaseInstance: ReturnType<typeof createClient<Database>> | undefined;
+
 // Get environment variables with fallbacks
 const SUPABASE_URL = import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
                      import.meta.env.VITE_SUPABASE_URL ||
@@ -27,10 +30,15 @@ console.log('✅ Supabase client initializing with URL:', SUPABASE_URL.substring
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-});
+// Initialize the client if not already initialized
+if (!supabaseInstance) {
+  supabaseInstance = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    }
+  });
+}
+
+export const supabase = supabaseInstance;
