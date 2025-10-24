@@ -188,20 +188,74 @@ export default function InventoryReports() {
     return matchesSearch;
   }) || [];
 
+  const generateCSVAndDownload = (rows: any[], filename: string) => {
+    if (!rows || rows.length === 0) {
+      toast.info('No data to export');
+      return;
+    }
+
+    const escape = (value: any) => {
+      if (value === null || value === undefined) return '';
+      const str = String(value);
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const keys = Object.keys(rows[0]);
+    const csvLines = [keys.join(',')];
+    for (const row of rows) {
+      csvLines.push(keys.map(k => escape(row[k])).join(','));
+    }
+
+    const csv = csvLines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleExport = () => {
-    toast.success('Inventory report exported successfully!');
+    // Export full products inventory as CSV with useful columns
+    const rows = (products || []).map((p: any) => ({
+      product_code: p.product_code || '',
+      name: p.name || '',
+      category: p.category || '',
+      current_stock: p.stock_quantity || 0,
+      minimum_stock_level: p.minimum_stock_level || 0,
+      reorder_point: p.reorder_point || 0,
+      cost_price: p.cost_price || 0,
+      total_value: ((p.stock_quantity || 0) * (p.cost_price || 0)) || 0
+    }));
+
+    generateCSVAndDownload(rows, `inventory_export_${new Date().toISOString().slice(0,10)}.csv`);
+    toast.success('Inventory exported');
   };
 
   const handleGenerateReorderReport = () => {
-    const reorderItems = products?.filter(product => 
+    const reorderItems = products?.filter(product =>
       (product.stock_quantity || 0) <= (product.reorder_point || 0)
     ) || [];
-    
+
     if (reorderItems.length === 0) {
       toast.info('No items need reordering at this time');
-    } else {
-      toast.success(`Generated reorder report for ${reorderItems.length} items`);
+      return;
     }
+
+    const rows = reorderItems.map((p: any) => ({
+      product_code: p.product_code || '',
+      name: p.name || '',
+      current_stock: p.stock_quantity || 0,
+      minimum_stock_level: p.minimum_stock_level || 0,
+      reorder_point: p.reorder_point || 0,
+      suggested_order_qty: Math.max(0, (p.reorder_point || 0) - (p.stock_quantity || 0))
+    }));
+
+    generateCSVAndDownload(rows, `reorder_report_${new Date().toISOString().slice(0,10)}.csv`);
+    toast.success(`Generated reorder report for ${reorderItems.length} items`);
   };
 
   return (
