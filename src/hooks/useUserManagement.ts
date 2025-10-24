@@ -129,10 +129,14 @@ export const useUserManagement = () => {
     }
   };
 
-  // Create a new user (admin only) - Uses invitation flow
+  // Create a new user (admin only) - Admin sets password; no self signup/email verify
   const createUser = async (userData: CreateUserData): Promise<{ success: boolean; password?: string; error?: string }> => {
     if (!isAdmin) {
       return { success: false, error: 'Unauthorized' };
+    }
+
+    if (!userData.password || userData.password.length < 8) {
+      return { success: false, error: 'Password is required (min 8 characters)' };
     }
 
     setLoading(true);
@@ -143,26 +147,22 @@ export const useUserManagement = () => {
         .from('profiles')
         .select('id')
         .eq('email', userData.email)
-        .single();
+        .maybeSingle();
 
       if (existingUser) {
         return { success: false, error: 'User with this email already exists' };
       }
 
-      // Instead of creating auth user directly (which requires service role),
-      // we'll create an invitation which the user can accept via signup
       const companyToSet = userData.company_id || currentUser?.company_id;
 
       // If no company is provided, try to get the first company
       let finalCompanyId = companyToSet;
       if (!finalCompanyId) {
-        // Fetch first available company
         const { data: companies } = await supabase
           .from('companies')
           .select('id')
           .limit(1)
           .single();
-
         finalCompanyId = companies?.id;
       }
 
@@ -170,48 +170,28 @@ export const useUserManagement = () => {
         return { success: false, error: 'No company available. Please create a company first.' };
       }
 
-      // Create user invitation
-      const { data: invitation, error: invitationError } = await supabase
-        .from('user_invitations')
-        .insert({
+      // Call Edge Function (admin-create-user) to create auth user + profile with status 'pending'
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
+        body: {
           email: userData.email,
+          password: userData.password,
+          full_name: userData.full_name,
           role: userData.role,
           company_id: finalCompanyId,
           invited_by: currentUser?.id,
-          status: 'pending',
-        })
-        .select()
-        .single();
+        }
+      });
 
-      if (invitationError) {
-        throw invitationError;
+      if (fnError) {
+        throw fnError;
       }
 
-      // Log user creation in audit trail
-      try {
-        await logUserCreation(invitation.id, userData.email, userData.role, finalCompanyId);
-      } catch (auditError) {
-        console.error('Failed to log user creation to audit trail:', auditError);
-        // Don't fail the operation if audit logging fails
-      }
-
-      // Note: In a production app, you would send an invitation email here
-      // with a signup link containing the invitation_token
-      // For now, generate a temporary password that you can share with the user
-      const temporaryPassword = userData.password && userData.password.length > 0
-        ? userData.password
-        : generateTemporaryPassword();
-
-      console.log(`Invitation created for ${userData.email}. Token: ${invitation.invitation_token}`);
-      console.log(`User can sign up with temporary password: ${temporaryPassword}`);
-
-      toast.success(`Invitation sent to ${userData.email}`);
+      toast.success('User created successfully');
       await fetchUsers();
-      await fetchInvitations();
 
       return {
         success: true,
-        password: temporaryPassword,
+        password: userData.password,
       };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'user creation');
