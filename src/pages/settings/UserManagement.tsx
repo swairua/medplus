@@ -45,6 +45,7 @@ import {
 import { useAuth, UserProfile } from '@/contexts/AuthContext';
 import useUserManagement from '@/hooks/useUserManagement';
 import { CreateUserModal } from '@/components/users/CreateUserModal';
+import { useState } from 'react';
 import { EditUserModal } from '@/components/users/EditUserModal';
 import { InviteUserModal } from '@/components/users/InviteUserModal';
 import { toast } from 'sonner';
