@@ -247,22 +247,129 @@ export function useDeleteCreditNote() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      // 1. Fetch the complete credit note with all related data
+      const { data: creditNote, error: fetchError } = await supabase
+        .from('credit_notes')
+        .select(
+          `
+          *,
+          credit_note_items(*),
+          credit_note_allocations(*)
+        `
+        )
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!creditNote) throw new Error('Credit note not found');
+
+      // 2. If credit note affects inventory, reverse stock movements
+      if (creditNote.affects_inventory) {
+        const { data: stockMovements, error: stockError } = await supabase
+          .from('stock_movements')
+          .select('*')
+          .eq('reference_type', 'CREDIT_NOTE')
+          .eq('reference_id', id);
+
+        if (stockError && !stockError.message.includes('does not exist')) {
+          throw stockError;
+        }
+
+        if (stockMovements && stockMovements.length > 0) {
+          const reversals = stockMovements.map((movement) => ({
+            company_id: movement.company_id,
+            product_id: movement.product_id,
+            movement_type: movement.movement_type === 'IN' ? 'OUT' : 'IN',
+            reference_type: 'CREDIT_NOTE_REVERSAL',
+            reference_id: id,
+            quantity: movement.quantity,
+            cost_per_unit: movement.cost_per_unit,
+            notes: `Reversal of CREDIT_NOTE ${creditNote.credit_note_number}: ${movement.notes || ''}`,
+          }));
+
+          const { error: reversalError } = await supabase
+            .from('stock_movements')
+            .insert(reversals);
+
+          if (reversalError && !reversalError.message.includes('does not exist')) {
+            throw reversalError;
+          }
+        }
+      }
+
+      // 3. If there are allocations, update related invoices
+      if (creditNote.credit_note_allocations && creditNote.credit_note_allocations.length > 0) {
+        for (const allocation of creditNote.credit_note_allocations) {
+          const { data: invoice, error: invoiceError } = await supabase
+            .from('invoices')
+            .select('balance_due, paid_amount, total_amount')
+            .eq('id', allocation.invoice_id)
+            .single();
+
+          if (!invoiceError && invoice) {
+            // Recalculate balance_due by adding back the allocated amount
+            const newBalanceDue = (invoice.balance_due || 0) + allocation.allocated_amount;
+
+            await supabase
+              .from('invoices')
+              .update({ balance_due: newBalanceDue })
+              .eq('id', allocation.invoice_id);
+          }
+        }
+      }
+
+      // 4. Delete the credit note (cascade deletes items and allocations)
+      const { error: deleteError } = await supabase
         .from('credit_notes')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+
+      // 5. Log the deletion with full snapshot
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data?.user?.id || null;
+        const userEmail = (data?.user?.email as string) || null;
+
+        await supabase.from('audit_logs').insert([
+          {
+            action: 'DELETE',
+            entity_type: 'credit_note',
+            record_id: id,
+            company_id: creditNote.company_id,
+            actor_user_id: userId,
+            actor_email: userEmail,
+            details: {
+              credit_note_number: creditNote.credit_note_number,
+              customer_id: creditNote.customer_id,
+              total_amount: creditNote.total_amount,
+              applied_amount: creditNote.applied_amount,
+              items_count: creditNote.credit_note_items?.length || 0,
+              allocations_count: creditNote.credit_note_allocations?.length || 0,
+              affected_invoices: creditNote.credit_note_allocations?.map((a) => a.invoice_id) || [],
+              inventory_affected: creditNote.affects_inventory,
+              stock_movements_reversed: creditNote.affects_inventory ? (stockMovements?.length || 0) : 0,
+            },
+          },
+        ]);
+      } catch (auditError) {
+        console.warn('Audit log creation failed:', auditError);
+      }
+
       return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
       queryClient.invalidateQueries({ queryKey: ['customerCreditNotes'] });
-      toast.success('Credit note deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success('Credit note deleted successfully! All related records have been updated.');
     },
     onError: (error: any) => {
       console.error('Error deleting credit note:', error);
-      toast.error('Failed to delete credit note. Please try again.');
+      const errorMessage =
+        error.message || 'Failed to delete credit note. Please try again.';
+      toast.error(errorMessage);
     },
   });
 }
