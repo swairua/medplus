@@ -322,7 +322,7 @@ export function CreateUserModal({
               <Input
                 id="password"
                 type="password"
-                placeholder="Set initial password (min 8 characters)"
+                placeholder="Set initial password (min 8 characters, uppercase, lowercase, numbers)"
                 value={formData.password}
                 onChange={handleInputChange('password')}
                 className={`pl-3 ${formErrors.password ? 'border-destructive' : ''}`}
@@ -331,6 +331,9 @@ export function CreateUserModal({
             </div>
             {formErrors.password && (
               <p className="text-sm text-destructive">{formErrors.password}</p>
+            )}
+            {!formErrors.password && formData.password && (
+              <p className="text-xs text-success">✓ Password meets requirements</p>
             )}
           </div>
 
