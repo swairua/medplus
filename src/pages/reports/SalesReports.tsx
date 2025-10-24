@@ -40,7 +40,9 @@ import {
 import { useCustomers, useProducts } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
+import useUserManagement from '@/hooks/useUserManagement';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export default function SalesReports() {
   const [dateRange, setDateRange] = useState('last_30_days');
