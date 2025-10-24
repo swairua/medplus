@@ -47,11 +47,16 @@ import {
   Shield,
   Lock,
   AlertTriangle,
+  History,
+  Loader2,
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import useRoleManagement from '@/hooks/useRoleManagement';
 import { Permission, PERMISSION_DESCRIPTIONS, RoleDefinition } from '@/types/permissions';
 import { toast } from 'sonner';
+import { RoleAuditHistory } from '@/components/roles/RoleAuditHistory';
+import { RoleAnalytics } from '@/components/roles/RoleAnalytics';
 
 // Group permissions by category
 const PERMISSION_GROUPS: Record<string, Permission[]> = {
@@ -80,6 +85,9 @@ export function RoleManagement() {
   const [editingRole, setEditingRole] = useState<RoleDefinition | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingRole, setDeletingRole] = useState<RoleDefinition | null>(null);
+  const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
+  const [selectedRoleForAudit, setSelectedRoleForAudit] = useState<RoleDefinition | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -109,15 +117,23 @@ export function RoleManagement() {
       return;
     }
 
-    const result = await createRole({
-      name: formData.name,
-      description: formData.description,
-      permissions: formData.permissions,
-    });
+    setSubmitting(true);
+    try {
+      const result = await createRole({
+        name: formData.name,
+        description: formData.description,
+        permissions: formData.permissions,
+      });
 
-    if (result.success) {
-      setCreateDialogOpen(false);
-      setFormData({ name: '', description: '', permissions: [] });
+      if (result.success) {
+        setCreateDialogOpen(false);
+        setFormData({ name: '', description: '', permissions: [] });
+      }
+    } catch (error) {
+      console.error('Error creating role:', error);
+      toast.error('Failed to create role');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -127,16 +143,24 @@ export function RoleManagement() {
       return;
     }
 
-    const result = await updateRole(editingRole.id, {
-      name: formData.name,
-      description: formData.description,
-      permissions: formData.permissions,
-    });
+    setSubmitting(true);
+    try {
+      const result = await updateRole(editingRole.id, {
+        name: formData.name,
+        description: formData.description,
+        permissions: formData.permissions,
+      });
 
-    if (result.success) {
-      setEditDialogOpen(false);
-      setEditingRole(null);
-      setFormData({ name: '', description: '', permissions: [] });
+      if (result.success) {
+        setEditDialogOpen(false);
+        setEditingRole(null);
+        setFormData({ name: '', description: '', permissions: [] });
+      }
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast.error('Failed to update role');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -206,6 +230,8 @@ export function RoleManagement() {
         </Button>
       </div>
 
+      <RoleAnalytics />
+
       <Card className="shadow-card">
         <CardContent className="pt-6">
           <Input
@@ -270,6 +296,15 @@ export function RoleManagement() {
                           <DropdownMenuItem onClick={() => openEditDialog(role)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedRoleForAudit(role);
+                              setAuditHistoryOpen(true);
+                            }}
+                          >
+                            <History className="mr-2 h-4 w-4" />
+                            Audit History
                           </DropdownMenuItem>
                           {!role.is_default && (
                             <DropdownMenuItem
@@ -372,8 +407,7 @@ export function RoleManagement() {
                         <div className="flex items-center space-x-2 mb-3">
                           <Checkbox
                             id={`group-${group}`}
-                            checked={allIncluded}
-                            indeterminate={!allIncluded && someIncluded}
+                            checked={allIncluded || someIncluded}
                             onCheckedChange={() => togglePermissionGroup(permissions)}
                           />
                           <Label
@@ -418,6 +452,7 @@ export function RoleManagement() {
 
           <DialogFooter>
             <Button
+              type="button"
               variant="outline"
               onClick={() => {
                 setCreateDialogOpen(false);
@@ -425,13 +460,23 @@ export function RoleManagement() {
                 setEditingRole(null);
                 setFormData({ name: '', description: '', permissions: [] });
               }}
+              disabled={submitting}
             >
               Cancel
             </Button>
             <Button
+              type="button"
               onClick={editingRole ? handleEditRole : handleCreateRole}
+              disabled={submitting || !formData.name.trim()}
             >
-              {editingRole ? 'Update Role' : 'Create Role'}
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {editingRole ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                editingRole ? 'Update Role' : 'Create Role'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -458,6 +503,28 @@ export function RoleManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Audit History Dialog */}
+      <Dialog open={auditHistoryOpen} onOpenChange={setAuditHistoryOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>
+              Audit History
+            </DialogTitle>
+            <DialogDescription>
+              View all changes made to role: {selectedRoleForAudit?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto">
+            {selectedRoleForAudit && (
+              <RoleAuditHistory
+                roleId={selectedRoleForAudit.id}
+                roleName={selectedRoleForAudit.name}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

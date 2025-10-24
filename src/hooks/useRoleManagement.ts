@@ -137,12 +137,31 @@ export const useRoleManagement = () => {
         throw updateError;
       }
 
-      // Log the role update
+      // Log the role update with detailed permission changes
       try {
         const roleName = data.name || currentRole?.name || 'Unknown';
-        await logRoleChange('update', roleId, roleName, currentUser?.company_id || '', {
+        const auditDetails: any = {
           changes: data,
-        });
+        };
+
+        // Track permission changes in detail
+        if (data.permissions && currentRole?.permissions) {
+          const oldPermissions = new Set(currentRole.permissions);
+          const newPermissions = new Set(data.permissions);
+
+          const addedPermissions = Array.from(newPermissions).filter(p => !oldPermissions.has(p));
+          const removedPermissions = Array.from(oldPermissions).filter(p => !newPermissions.has(p));
+
+          if (addedPermissions.length > 0 || removedPermissions.length > 0) {
+            auditDetails.permission_changes = {
+              added: addedPermissions,
+              removed: removedPermissions,
+              total_permissions: data.permissions.length,
+            };
+          }
+        }
+
+        await logRoleChange('update', roleId, roleName, currentUser?.company_id || '', auditDetails);
       } catch (auditError) {
         console.error('Failed to log role update:', auditError);
       }
