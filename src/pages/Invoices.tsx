@@ -65,6 +65,8 @@ interface Invoice {
   balance_due: number;
   status: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue';
   invoice_items?: any[];
+  created_by?: string;
+  created_by_profile?: { full_name?: string } | null;
 }
 
 function getStatusColor(status: string) {
