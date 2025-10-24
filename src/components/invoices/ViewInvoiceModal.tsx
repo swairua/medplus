@@ -108,6 +108,7 @@ export function ViewInvoiceModal({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -336,11 +337,39 @@ export function ViewInvoiceModal({
         </Card>
 
         <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowDeleteDialog(true)}
+            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete invoice {invoice.invoice_number}? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogAction
+          onClick={handleDeleteConfirm}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          disabled={deleteInvoice.isPending}
+        >
+          {deleteInvoice.isPending ? 'Deleting...' : 'Delete'}
+        </AlertDialogAction>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
