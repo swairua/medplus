@@ -272,6 +272,42 @@ export default function InventoryReports() {
     toast.success(`Generated reorder report for ${reorderItems.length} items`);
   };
 
+  if (permissionsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Checking permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canViewReports('view_inventory_reports')) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Inventory Reports</h1>
+            <p className="text-muted-foreground">Track inventory movement and stock levels</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center">
+                <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+                <p className="text-muted-foreground">You do not have permission to view inventory reports.</p>
+                <p className="text-sm text-muted-foreground mt-2">Contact your administrator if you believe this is an error.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -286,7 +322,7 @@ export default function InventoryReports() {
             <AlertTriangle className="h-4 w-4 mr-2" />
             Reorder Report
           </Button>
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} disabled={!canExportReports('export_reports')}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
