@@ -176,19 +176,28 @@ export const useUserManagement = () => {
       }
 
       // Call Edge Function (admin-create-user) to create auth user + profile
+      // Invoke Edge Function to create auth user + profile
+      const invokePayload = {
+        email: userData.email,
+        // Do not log password in plain text
+        full_name: userData.full_name,
+        phone: userData.phone,
+        department: userData.department,
+        position: userData.position,
+        role: userData.role,
+        company_id: finalCompanyId,
+        invited_by: currentUser?.id,
+      };
+      console.log('Invoking admin-create-user edge function', { payload: invokePayload });
+
       const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
         body: {
-          email: userData.email,
+          ...invokePayload,
           password: userData.password,
-          full_name: userData.full_name,
-          phone: userData.phone,
-          department: userData.department,
-          position: userData.position,
-          role: userData.role,
-          company_id: finalCompanyId,
-          invited_by: currentUser?.id,
         }
       });
+
+      console.log('admin-create-user response', { data: fnData, error: fnError });
 
       if (fnError) {
         const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'user creation');
