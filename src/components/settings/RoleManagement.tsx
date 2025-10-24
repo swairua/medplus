@@ -389,8 +389,7 @@ export function RoleManagement() {
                         <div className="flex items-center space-x-2 mb-3">
                           <Checkbox
                             id={`group-${group}`}
-                            checked={allIncluded}
-                            indeterminate={!allIncluded && someIncluded}
+                            checked={allIncluded || someIncluded}
                             onCheckedChange={() => togglePermissionGroup(permissions)}
                           />
                           <Label
