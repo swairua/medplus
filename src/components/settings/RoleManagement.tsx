@@ -464,7 +464,7 @@ export function RoleManagement() {
                 setCreateDialogOpen(false);
                 setEditDialogOpen(false);
                 setEditingRole(null);
-                setFormData({ name: '', description: '', permissions: [] });
+                setFormData({ name: '', description: '', permissions: [], company_id: profile?.company_id || '' });
               }}
               disabled={submitting}
             >
