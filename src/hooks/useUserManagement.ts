@@ -127,7 +127,7 @@ export const useUserManagement = () => {
 
   // Create a new user (admin only)
   const createUser = async (userData: CreateUserData): Promise<{ success: boolean; password?: string; error?: string }> => {
-    if (!isAdmin || !currentUser?.company_id) {
+    if (!isAdmin) {
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -163,13 +163,15 @@ export const useUserManagement = () => {
       }
 
       // Update profile with additional data
+      const companyToSet = userData.company_id || currentUser?.company_id || null;
+
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           full_name: userData.full_name,
           role: userData.role,
           phone: userData.phone,
-          company_id: currentUser.company_id,
+          company_id: companyToSet,
           department: userData.department,
           position: userData.position,
           status: 'active',
