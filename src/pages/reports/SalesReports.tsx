@@ -381,13 +381,13 @@ export default function SalesReports() {
           </Select>
 
           {/* Creator filter */}
-          <Select value={creatorFilter || ''} onValueChange={(v) => setCreatorFilter(v || null)}>
+                  <Select value={creatorFilter} onValueChange={(v) => setCreatorFilter(v)}>
             <SelectTrigger className="w-56">
               <Users className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter by creator" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All creators</SelectItem>
+              <SelectItem value="all">All creators</SelectItem>
               {(users || []).map(user => (
                 <SelectItem key={user.id} value={user.id}>{user.full_name || user.email}</SelectItem>
               ))}
