@@ -386,10 +386,10 @@ export default function SalesReports() {
               <Users className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter by creator" />
             </SelectTrigger>
-            <SelectContent>
+              <SelectContent>
               <SelectItem value="all">All creators</SelectItem>
-              {(users || []).map(user => (
-                <SelectItem key={user.id} value={user.id}>{user.full_name || user.email}</SelectItem>
+              {(creators || []).map(creator => (
+                <SelectItem key={creator.id} value={creator.id}>{creator.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
