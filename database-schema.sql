@@ -123,7 +123,7 @@ CREATE TABLE quotations (
     total_amount DECIMAL(15,2) DEFAULT 0,
     terms_and_conditions TEXT,
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
