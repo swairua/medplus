@@ -1,0 +1,248 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.2';
+import { corsHeaders } from '../_shared/cors.ts';
+
+interface CreateUserRequest {
+  email: string;
+  password: string;
+  full_name?: string;
+  role: 'user' | 'admin' | 'accountant' | 'stock_manager';
+  company_id: string;
+  invited_by: string;
+  phone?: string;
+  department?: string;
+  position?: string;
+}
+
+interface CreateUserResponse {
+  success: boolean;
+  user_id?: string;
+  error?: string;
+}
+
+Deno.serve(async (req) => {
+  // Handle CORS
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    // Only allow POST
+    if (req.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Method not allowed' }),
+        { status: 405, headers: corsHeaders }
+      );
+    }
+
+    const body: CreateUserRequest = await req.json();
+
+    // Validate required fields
+    if (!body.email || !body.password || !body.role || !body.company_id || !body.invited_by) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing required fields: email, password, role, company_id, invited_by' }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Validate password strength (minimum 8 characters, no additional requirements for admin creation)
+    if (body.password.length < 8) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Password must be at least 8 characters' }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(body.email)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid email format' }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Validate role
+    const validRoles = ['user', 'admin', 'accountant', 'stock_manager'];
+    if (!validRoles.includes(body.role)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid role' }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Create Supabase client with service role (for admin operations)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', body.email)
+      .maybeSingle();
+
+    if (existingUser) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'User with this email already exists' }),
+        { status: 409, headers: corsHeaders }
+      );
+    }
+
+    // Verify company exists
+    const { data: company } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('id', body.company_id)
+      .maybeSingle();
+
+    if (!company) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Company not found' }),
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    // Create auth user with admin API
+    let userId: string;
+    try {
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: body.email,
+        password: body.password,
+        email_confirm: true, // Auto-confirm email for admin-created users
+        user_metadata: {
+          full_name: body.full_name,
+          role: body.role,
+          company_id: body.company_id,
+        },
+      });
+
+      if (authError) {
+        console.error('Auth user creation error:', authError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Failed to create auth user: ${authError.message}`,
+          }),
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      if (!authData.user?.id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to create auth user' }),
+          { status: 500, headers: corsHeaders }
+        );
+      }
+
+      userId = authData.user.id;
+    } catch (err) {
+      console.error('Error creating auth user:', err);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Failed to create auth user: ${err instanceof Error ? err.message : String(err)}`,
+        }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    // Create profile record with status 'active' (directly created users are immediately active)
+    try {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          email: body.email,
+          full_name: body.full_name || null,
+          phone: body.phone || null,
+          department: body.department || null,
+          position: body.position || null,
+          company_id: body.company_id,
+          role: body.role,
+          status: 'active', // Auto-activate admin-created users
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) {
+        // Try to clean up auth user if profile creation fails
+        console.error('Profile creation error:', profileError);
+        try {
+          await supabase.auth.admin.deleteUser(userId);
+        } catch (cleanupErr) {
+          console.error('Failed to cleanup auth user after profile creation error:', cleanupErr);
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Failed to create user profile: ${profileError.message}`,
+          }),
+          { status: 400, headers: corsHeaders }
+        );
+      }
+    } catch (err) {
+      // Try to clean up auth user if profile creation fails
+      console.error('Error creating profile:', err);
+      try {
+        await supabase.auth.admin.deleteUser(userId);
+      } catch (cleanupErr) {
+        console.error('Failed to cleanup auth user after profile creation error:', cleanupErr);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Failed to create user profile: ${err instanceof Error ? err.message : String(err)}`,
+        }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    // Log user creation in audit trail
+    try {
+      await supabase.from('audit_logs').insert({
+        action: 'CREATE',
+        entity_type: 'user_creation',
+        record_id: userId,
+        company_id: body.company_id,
+        actor_user_id: body.invited_by,
+        actor_email: null, // Will be retrieved by hook if needed
+        details: {
+          created_user_email: body.email,
+          created_user_role: body.role,
+          created_user_full_name: body.full_name,
+          timestamp: new Date().toISOString(),
+          creation_method: 'admin_direct_creation',
+        },
+      });
+    } catch (auditErr) {
+      // Log to console but don't fail the operation
+      console.warn('Failed to log user creation to audit trail:', auditErr);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        user_id: userId,
+      }),
+      { status: 200, headers: corsHeaders }
+    );
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: `Server error: ${error instanceof Error ? error.message : String(error)}`,
+      }),
+      { status: 500, headers: corsHeaders }
+    );
+  }
+});
