@@ -540,6 +540,18 @@ export default function CreditNotes() {
         creditNote={selectedCreditNote}
         onSuccess={handleCreateSuccess}
       />
+
+      {/* Delete Credit Note Modal */}
+      <DeleteCreditNoteModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        creditNote={selectedCreditNote}
+        isDeleting={deleteCreditNote.isPending}
+        onConfirm={async (creditNoteId) => {
+          await deleteCreditNote.mutateAsync(creditNoteId);
+          refetch();
+        }}
+      />
     </div>
   );
 }
