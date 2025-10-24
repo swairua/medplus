@@ -128,7 +128,7 @@ export function RoleManagement() {
 
       if (result.success) {
         setCreateDialogOpen(false);
-        setFormData({ name: '', description: '', permissions: [] });
+        setFormData({ name: '', description: '', permissions: [], company_id: profile?.company_id || '' });
       } else {
         toast.error(result.error || 'Failed to create role');
       }
