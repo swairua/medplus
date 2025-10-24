@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,16 +11,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  BarChart3, 
-  Download, 
-  Calendar, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  BarChart3,
+  Download,
+  Calendar,
+  TrendingUp,
+  TrendingDown,
   DollarSign,
   ShoppingCart,
   Users,
-  Package
+  Package,
+  Lock
 } from 'lucide-react';
 import { 
   BarChart, 
