@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,10 +24,12 @@ import {
   CheckCircle,
   Clock,
   FileText,
-  Search
+  Search,
+  Lock
 } from 'lucide-react';
 import { useCustomers, usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 import { exportCustomerStatementsToCSV, exportCustomerStatementSummaryToCSV, exportCustomerStatementsToExcel } from '@/utils/csvExporter';
