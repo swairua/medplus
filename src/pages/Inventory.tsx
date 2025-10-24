@@ -101,10 +101,18 @@ export default function Inventory() {
   }, [permissionsLoading, canViewInventory]);
 
   const handleAddItem = () => {
+    if (!canCreateInventory('create_inventory')) {
+      toast.error('You do not have permission to create inventory items');
+      return;
+    }
     setShowAddModal(true);
   };
 
   const handleStockAdjustment = (item?: InventoryItem) => {
+    if (!canManageInventory('manage_inventory')) {
+      toast.error('You do not have permission to adjust inventory');
+      return;
+    }
     if (item) {
       setSelectedItem(item);
       setShowAdjustmentModal(true);
@@ -119,11 +127,19 @@ export default function Inventory() {
   };
 
   const handleEditItem = (item: InventoryItem) => {
+    if (!canEditInventory('edit_inventory')) {
+      toast.error('You do not have permission to edit inventory items');
+      return;
+    }
     setSelectedItem(item);
     setShowEditModal(true);
   };
 
   const handleRestockItem = (item: InventoryItem) => {
+    if (!canManageInventory('manage_inventory')) {
+      toast.error('You do not have permission to restock items');
+      return;
+    }
     setSelectedItem(item);
     setShowRestockModal(true);
   };
