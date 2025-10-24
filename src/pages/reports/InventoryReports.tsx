@@ -55,6 +55,13 @@ export default function InventoryReports() {
 
   const { data: products } = useProducts();
   const { data: stockMovements } = useStockMovements();
+  const { can: canViewReports, can: canExportReports, loading: permissionsLoading } = usePermissions();
+
+  useEffect(() => {
+    if (!permissionsLoading && !canViewReports('view_inventory_reports')) {
+      toast.error('You do not have permission to view inventory reports');
+    }
+  }, [permissionsLoading, canViewReports]);
 
   // Calculate stock movement data from real movements
   const calculateStockMovementData = () => {
