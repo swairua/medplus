@@ -52,13 +52,28 @@ export function ViewQuotationModal({
   quotation,
   onEdit,
   onDownload,
-  onSend
+  onSend,
+  onDelete
 }: ViewQuotationModalProps) {
   if (!quotation) return null;
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deleteQuotation = useDeleteQuotation();
 
   // Get company data for logo
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteQuotation.mutateAsync(quotation.id);
+      setShowDeleteDialog(false);
+      onOpenChange(false);
+      onDelete?.();
+    } catch (error) {
+      console.error('Error deleting quotation:', error);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
