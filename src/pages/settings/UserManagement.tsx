@@ -48,7 +48,9 @@ import { CreateUserModal } from '@/components/users/CreateUserModal';
 import { EditUserModal } from '@/components/users/EditUserModal';
 import { InviteUserModal } from '@/components/users/InviteUserModal';
 import { UserAuditLog } from '@/components/users/UserAuditLog';
+import { RoleManagement } from '@/components/settings/RoleManagement';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function getRoleColor(role: string) {
   switch (role) {
