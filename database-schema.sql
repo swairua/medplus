@@ -278,7 +278,7 @@ CREATE TABLE remittance_advice (
     total_payment DECIMAL(15,2) NOT NULL,
     status document_status DEFAULT 'draft',
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
