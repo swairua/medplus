@@ -283,6 +283,11 @@ export default function SalesReports() {
   };
 
   const handleExport = () => {
+    if (!canExportReports('export_reports')) {
+      toast.error('You do not have permission to export reports');
+      return;
+    }
+
     const filteredInvoices = getFilteredInvoices();
 
     // Build CSV
