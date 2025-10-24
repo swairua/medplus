@@ -110,6 +110,7 @@ export function ViewQuotationModal({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -407,5 +408,25 @@ export function ViewQuotationModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Quotation</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete quotation {quotation.quotation_number}? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogAction
+          onClick={handleDeleteConfirm}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          disabled={deleteQuotation.isPending}
+        >
+          {deleteQuotation.isPending ? 'Deleting...' : 'Delete'}
+        </AlertDialogAction>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
