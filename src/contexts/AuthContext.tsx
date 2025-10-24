@@ -468,14 +468,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (error) {
       setLoading(false);
-      // Return error without showing toast - let the component handle it
       return { error: error as AuthError };
     }
 
     if (data?.error) {
       setLoading(false);
-      // Return error without showing toast - let the component handle it
       return { error: data.error };
+    }
+
+    // After signup, if an approved invitation exists for this email, activate the profile and assign role/company
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const newUser = userData?.user;
+      if (newUser?.id) {
+        const { data: invitation } = await supabase
+          .from('user_invitations')
+          .select('*')
+          .eq('email', email)
+          .eq('is_approved', true)
+          .order('invited_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (invitation) {
+          await supabase
+            .from('profiles')
+            .update({
+              status: 'active',
+              role: invitation.role,
+              company_id: invitation.company_id,
+              invited_by: invitation.invited_by,
+              invited_at: invitation.invited_at
+            })
+            .eq('id', newUser.id);
+
+          // Mark invitation as accepted
+          await supabase
+            .from('user_invitations')
+            .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+            .eq('id', invitation.id);
+        }
+      }
+    } catch (postSignupErr) {
+      console.warn('Post-signup activation step failed:', postSignupErr);
     }
 
     setTimeout(() => toast.success('Account created successfully'), 0);
