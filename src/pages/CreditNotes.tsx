@@ -45,10 +45,12 @@ import { CreateCreditNoteModal } from '@/components/credit-notes/CreateCreditNot
 import { ViewCreditNoteModal } from '@/components/credit-notes/ViewCreditNoteModal';
 import { EditCreditNoteModal } from '@/components/credit-notes/EditCreditNoteModal';
 import { ApplyCreditNoteModal } from '@/components/credit-notes/ApplyCreditNoteModal';
+import { DeleteCreditNoteModal } from '@/components/credit-notes/DeleteCreditNoteModal';
 import { CreditNotesSetupGuide } from '@/components/credit-notes/CreditNotesSetupGuide';
 import { SimpleForeignKeyPatch } from '@/components/credit-notes/SimpleForeignKeyPatch';
 import { CreditNotesConnectionStatus } from '@/components/credit-notes/CreditNotesConnectionStatus';
 import { useCreditNotePDFDownload } from '@/hooks/useCreditNotePDF';
+import { useDeleteCreditNote } from '@/hooks/useCreditNotes';
 import type { CreditNote } from '@/hooks/useCreditNotes';
 
 function getStatusColor(status: string) {
