@@ -445,7 +445,7 @@ export default function SalesReports() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} disabled={!canExportReports('export_reports')}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
