@@ -124,6 +124,7 @@ export function RoleManagement() {
         name: formData.name,
         description: formData.description,
         permissions: formData.permissions,
+        company_id: formData.company_id,
       });
 
       if (result.success) {
