@@ -39,7 +39,7 @@ import {
   Truck
 } from 'lucide-react';
 import { useCompanies } from '@/hooks/useDatabase';
-import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
+import { useInvoicesFixed as useInvoices, useDeleteInvoice } from '@/hooks/useInvoicesFixed';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
@@ -105,6 +105,21 @@ export default function Invoices() {
   
   // Use the fixed invoices hook
   const { data: invoices, isLoading, error, refetch } = useInvoices(currentCompany?.id);
+  const deleteInvoice = useDeleteInvoice();
+
+  const handleDeleteInvoice = async (invoice: Invoice) => {
+    const ok = window.confirm(`Delete invoice ${invoice.invoice_number}? This action cannot be undone.`);
+    if (!ok) return;
+    try {
+      await deleteInvoice.mutateAsync(invoice.id);
+      refetch();
+      setSelectedInvoice(null);
+      toast.success('Invoice deleted');
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      toast.error('Failed to delete invoice');
+    }
+  };
 
   // Filter and search logic
   const filteredInvoices = invoices?.filter(invoice => {
@@ -589,8 +604,8 @@ Website: www.biolegendscientific.co.ke`;
                         {invoice.status !== 'paid' && (
                           <>
                             {invoice.status === 'draft' && (
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => handleSendInvoice(invoice.id)}
                                 className="bg-primary-light text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground"
@@ -607,6 +622,15 @@ Website: www.biolegendscientific.co.ke`;
                             >
                               <DollarSign className="h-4 w-4 mr-1" />
                               {(invoice.balance_due || 0) > 0 ? 'Record Payment' : 'Payment Adjustment'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteInvoice(invoice)}
+                              title="Delete invoice"
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
                         )}
