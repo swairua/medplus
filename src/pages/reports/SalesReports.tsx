@@ -61,45 +61,44 @@ export default function SalesReports() {
   const isLoading = invoicesLoading || customersLoading || productsLoading;
   const hasError = invoicesError || customersError || productsError;
 
-  // Get filtered invoices based on date range
+  // Get filtered invoices based on date range and creator filter
   const getFilteredInvoices = () => {
     if (!invoices) return [];
 
-    if (dateRange === 'custom' && startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999); // Include full end date
-      
-      return invoices.filter(invoice => {
-        const invoiceDate = new Date(invoice.invoice_date);
-        return invoiceDate >= start && invoiceDate <= end;
-      });
-    }
+    const byDateRange = (() => {
+      if (dateRange === 'custom' && startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // Include full end date
+        return invoices.filter(invoice => {
+          const invoiceDate = new Date(invoice.invoice_date);
+          return invoiceDate >= start && invoiceDate <= end;
+        });
+      }
 
-    const now = new Date();
-    let filterStart = new Date();
-    
-    switch (dateRange) {
-      case 'last_7_days':
-        filterStart.setDate(now.getDate() - 7);
-        break;
-      case 'last_30_days':
-        filterStart.setDate(now.getDate() - 30);
-        break;
-      case 'last_90_days':
-        filterStart.setDate(now.getDate() - 90);
-        break;
-      case 'this_year':
-        filterStart = new Date(now.getFullYear(), 0, 1);
-        break;
-      default:
-        filterStart.setDate(now.getDate() - 30);
-    }
-    
-    return invoices.filter(invoice => {
-      const invoiceDate = new Date(invoice.invoice_date);
-      return invoiceDate >= filterStart;
-    });
+      const now = new Date();
+      let filterStart = new Date();
+      switch (dateRange) {
+        case 'last_7_days':
+          filterStart.setDate(now.getDate() - 7);
+          break;
+        case 'last_30_days':
+          filterStart.setDate(now.getDate() - 30);
+          break;
+        case 'last_90_days':
+          filterStart.setDate(now.getDate() - 90);
+          break;
+        case 'this_year':
+          filterStart = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          filterStart.setDate(now.getDate() - 30);
+      }
+      return invoices.filter(invoice => new Date(invoice.invoice_date) >= filterStart);
+    })();
+
+    if (!creatorFilter) return byDateRange;
+    return byDateRange.filter(inv => inv.created_by === creatorFilter);
   };
 
   // Calculate monthly sales data from filtered invoices
