@@ -89,8 +89,8 @@ export function CreateUserModal({
 
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please enter a valid email';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address';
     }
 
     if (!formData.full_name.trim()) {
@@ -101,9 +101,24 @@ export function CreateUserModal({
       errors.role = 'Role is required';
     }
 
-    // Require password (admin sets initial password)
-    if (!formData.password || formData.password.length < 8) {
+    // Validate password strength
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
       errors.password = 'Password must be at least 8 characters';
+    } else {
+      // Check password strength
+      const hasUpperCase = /[A-Z]/.test(formData.password);
+      const hasLowerCase = /[a-z]/.test(formData.password);
+      const hasNumbers = /\d/.test(formData.password);
+      const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
+
+      if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+        errors.password = 'Password must contain uppercase, lowercase, and numbers';
+      } else if (!hasSpecialChar) {
+        // Warning level - still allow but inform user
+        console.warn('Password does not contain special characters for extra security');
+      }
     }
 
     setFormErrors(errors);
