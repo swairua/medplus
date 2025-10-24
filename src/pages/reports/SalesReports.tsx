@@ -517,7 +517,7 @@ export default function SalesReports() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                  <Tooltip formatter={(value) => [formatCurrency(value as number), 'Sales']} />
                   <Legend />
                   <Line type="monotone" dataKey="sales" stroke="#8884d8" strokeWidth={2} />
                 </LineChart>
@@ -559,7 +559,7 @@ export default function SalesReports() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, value }) => `${name}: $${value}`}
+                    label={({ name, value }) => `${name}: ${formatCurrency(value as number)}` }
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="sales"
@@ -568,7 +568,7 @@ export default function SalesReports() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                  <Tooltip formatter={(value) => [formatCurrency(value as number), 'Sales']} />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -584,7 +584,7 @@ export default function SalesReports() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                  <Tooltip formatter={(value) => [formatCurrency(value as number), 'Sales']} />
                   <Bar dataKey="sales" fill="#8884d8" />
                 </BarChart>
               </ResponsiveContainer>
@@ -612,9 +612,9 @@ export default function SalesReports() {
                 {topCustomersData.map((customer, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>${customer.sales.toFixed(2)}</TableCell>
+                    <TableCell>{formatCurrency(customer.sales)}</TableCell>
                     <TableCell>{customer.invoices}</TableCell>
-                    <TableCell>${(customer.sales / customer.invoices).toFixed(2)}</TableCell>
+                    <TableCell>{formatCurrency(customer.sales / customer.invoices)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
