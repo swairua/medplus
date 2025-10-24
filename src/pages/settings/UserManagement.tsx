@@ -95,6 +95,7 @@ export default function UserManagement() {
     inviteUser,
     revokeInvitation,
     getUserStats,
+    promoteAllToAdmin,
   } = useUserManagement();
 
   const [searchTerm, setSearchTerm] = useState('');
