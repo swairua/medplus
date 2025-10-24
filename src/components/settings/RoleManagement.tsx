@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentCompanyId } from '@/contexts/CompanyContext';
 import useRoleManagement from '@/hooks/useRoleManagement';
 import { Permission, PERMISSION_DESCRIPTIONS, RoleDefinition } from '@/types/permissions';
 import { toast } from 'sonner';
@@ -76,7 +77,8 @@ const PERMISSION_GROUPS: Record<string, Permission[]> = {
 };
 
 export function RoleManagement() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
+  const currentCompanyId = useCurrentCompanyId();
   const { roles, loading, createRole, updateRole, deleteRole } = useRoleManagement();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,6 +95,7 @@ export function RoleManagement() {
     name: '',
     description: '',
     permissions: [] as Permission[],
+    company_id: currentCompanyId || profile?.company_id || '',
   });
 
   if (!isAdmin) {
@@ -123,11 +126,14 @@ export function RoleManagement() {
         name: formData.name,
         description: formData.description,
         permissions: formData.permissions,
+        company_id: formData.company_id,
       });
 
       if (result.success) {
         setCreateDialogOpen(false);
-        setFormData({ name: '', description: '', permissions: [] });
+        setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
+      } else {
+        toast.error(result.error || 'Failed to create role');
       }
     } catch (error) {
       console.error('Error creating role:', error);
@@ -154,7 +160,9 @@ export function RoleManagement() {
       if (result.success) {
         setEditDialogOpen(false);
         setEditingRole(null);
-        setFormData({ name: '', description: '', permissions: [] });
+        setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
+      } else {
+        toast.error(result.error || 'Failed to update role');
       }
     } catch (error) {
       console.error('Error updating role:', error);
@@ -181,6 +189,7 @@ export function RoleManagement() {
       name: role.name,
       description: role.description || '',
       permissions: role.permissions,
+      company_id: (role as any).company_id || currentCompanyId || profile?.company_id || '',
     });
     setEditDialogOpen(true);
   };
@@ -221,7 +230,7 @@ export function RoleManagement() {
           size="lg"
           onClick={() => {
             setEditingRole(null);
-            setFormData({ name: '', description: '', permissions: [] });
+            setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
             setCreateDialogOpen(true);
           }}
         >
@@ -337,7 +346,7 @@ export function RoleManagement() {
             setCreateDialogOpen(false);
             setEditDialogOpen(false);
             setEditingRole(null);
-            setFormData({ name: '', description: '', permissions: [] });
+            setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
           }
         }}
       >
@@ -380,6 +389,17 @@ export function RoleManagement() {
                       description: e.target.value,
                     }))
                   }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="company_id">Company ID</Label>
+                <Input
+                  id="company_id"
+                  placeholder="Company ID"
+                  value={formData.company_id}
+                  onChange={() => {}}
+                  disabled
                 />
               </div>
             </div>
@@ -458,7 +478,7 @@ export function RoleManagement() {
                 setCreateDialogOpen(false);
                 setEditDialogOpen(false);
                 setEditingRole(null);
-                setFormData({ name: '', description: '', permissions: [] });
+                setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
               }}
               disabled={submitting}
             >

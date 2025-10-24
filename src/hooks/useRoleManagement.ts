@@ -10,6 +10,7 @@ interface CreateRoleData {
   name: string;
   description?: string;
   permissions: Permission[];
+  company_id?: string;
 }
 
 interface UpdateRoleData {
@@ -63,19 +64,21 @@ export const useRoleManagement = () => {
    */
   const createRole = async (data: CreateRoleData): Promise<{ success: boolean; role?: RoleDefinition; error?: string }> => {
     if (!isAdmin || !currentUser?.company_id) {
+      toast.error('You are not authorized or no company is selected');
       return { success: false, error: 'Unauthorized' };
     }
 
     setLoading(true);
 
     try {
+      const companyIdToUse = data.company_id || currentUser.company_id;
       const { data: newRole, error: createError } = await supabase
         .from('roles')
         .insert({
           name: data.name,
           description: data.description,
           permissions: data.permissions,
-          company_id: currentUser.company_id,
+          company_id: companyIdToUse,
           role_type: 'custom',
           is_default: false,
         })
@@ -88,7 +91,7 @@ export const useRoleManagement = () => {
 
       // Log the role creation
       try {
-        await logRoleChange('create', newRole.id, data.name, currentUser.company_id, {
+        await logRoleChange('create', newRole.id, data.name, companyIdToUse, {
           permissions: data.permissions,
         });
       } catch (auditError) {
@@ -116,6 +119,7 @@ export const useRoleManagement = () => {
     data: UpdateRoleData
   ): Promise<{ success: boolean; error?: string }> => {
     if (!isAdmin) {
+      toast.error('You are not authorized to update roles');
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -184,6 +188,7 @@ export const useRoleManagement = () => {
    */
   const deleteRole = async (roleId: string): Promise<{ success: boolean; error?: string }> => {
     if (!isAdmin) {
+      toast.error('You are not authorized to delete roles');
       return { success: false, error: 'Unauthorized' };
     }
 
