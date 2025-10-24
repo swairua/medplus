@@ -47,10 +47,12 @@ export default function LPOs() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedLPO, setSelectedLPO] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAuditPanel, setShowAuditPanel] = useState(false);
   const [showCustomerSupplierAudit, setShowCustomerSupplierAudit] = useState(false);
+  const [deleteRelatedCounts, setDeleteRelatedCounts] = useState<any>(null);
 
   // Database hooks
   const { data: companies } = useCompanies();
