@@ -223,7 +223,7 @@ CREATE TABLE delivery_notes (
     received_by VARCHAR(255),
     delivery_address TEXT,
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
