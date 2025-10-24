@@ -593,7 +593,8 @@ export const useUserManagement = () => {
       });
 
       if (fnError) {
-        throw fnError;
+        const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'password reset');
+        return { success: false, error: fnErrorMessage || 'Failed to send password reset email' };
       }
 
       if (fnData && !fnData.success) {
@@ -604,7 +605,7 @@ export const useUserManagement = () => {
       return { success: true };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'password reset');
-      console.error('Error resetting password:', err);
+      console.error('Error resetting password:', errorMessage, err);
       toast.error(`Failed to reset password: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
