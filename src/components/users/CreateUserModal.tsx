@@ -41,6 +41,7 @@ export function CreateUserModal({
     phone: '',
     department: '',
     position: '',
+    password: ''
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
