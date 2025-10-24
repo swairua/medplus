@@ -21,7 +21,6 @@ import { Loader2, Mail, User, Phone, Building, MapPin } from 'lucide-react';
 import { UserRole } from '@/contexts/AuthContext';
 import { CreateUserData } from '@/hooks/useUserManagement';
 import { toast } from 'sonner';
-import { useState } from 'react';
 
 interface CreateUserModalProps {
   open: boolean;
