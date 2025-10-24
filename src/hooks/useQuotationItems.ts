@@ -1000,3 +1000,32 @@ export const useConvertQuotationToProforma = () => {
     },
   });
 };
+
+// Delete a quotation
+export const useDeleteQuotation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (quotationId: string) => {
+      const { error } = await supabase
+        .from('quotations')
+        .delete()
+        .eq('id', quotationId);
+
+      if (error) {
+        const errorMessage = parseErrorMessageWithCodes(error, 'delete quotation');
+        console.error('Error deleting quotation:', errorMessage);
+        throw new Error(`Failed to delete quotation: ${errorMessage}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      toast.success('Quotation deleted successfully!');
+    },
+    onError: (error) => {
+      const errorMessage = parseErrorMessageWithCodes(error, 'delete quotation');
+      console.error('Error deleting quotation:', errorMessage);
+      toast.error(`Failed to delete quotation: ${errorMessage}`);
+    },
+  });
+};
