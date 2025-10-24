@@ -174,6 +174,13 @@ export default function UserManagement() {
     }
   };
 
+  const handleApproveInvitation = async (invitationId: string) => {
+    const result = await approveInvitation(invitationId);
+    if (result.success) {
+      toast.success('Invitation approved successfully');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
