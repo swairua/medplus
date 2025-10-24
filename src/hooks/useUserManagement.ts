@@ -568,6 +568,49 @@ export const useUserManagement = () => {
     };
   };
 
+  // Reset user password (admin only) - sends password reset email
+  const resetUserPassword = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    setLoading(true);
+
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) {
+        return { success: false, error: 'User not found' };
+      }
+
+      // Call Edge Function to send password reset email
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-reset-password', {
+        body: {
+          email: user.email,
+          user_id: userId,
+          admin_id: currentUser?.id,
+        }
+      });
+
+      if (fnError) {
+        throw fnError;
+      }
+
+      if (fnData && !fnData.success) {
+        return { success: false, error: fnData.error || 'Failed to send password reset email' };
+      }
+
+      toast.success(`Password reset email sent to ${user.email}`);
+      return { success: true };
+    } catch (err) {
+      const errorMessage = parseErrorMessageWithCodes(err, 'password reset');
+      console.error('Error resetting password:', err);
+      toast.error(`Failed to reset password: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load data on mount
   useEffect(() => {
     if (isAdmin) {
@@ -590,6 +633,7 @@ export const useUserManagement = () => {
     revokeInvitation,
     approveInvitation,
     acceptInvitation,
+    resetUserPassword,
     getUserStats,
     promoteAllToAdmin,
   };
