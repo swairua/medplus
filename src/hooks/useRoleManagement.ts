@@ -63,6 +63,7 @@ export const useRoleManagement = () => {
    */
   const createRole = async (data: CreateRoleData): Promise<{ success: boolean; role?: RoleDefinition; error?: string }> => {
     if (!isAdmin || !currentUser?.company_id) {
+      toast.error('You are not authorized or no company is selected');
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -116,6 +117,7 @@ export const useRoleManagement = () => {
     data: UpdateRoleData
   ): Promise<{ success: boolean; error?: string }> => {
     if (!isAdmin) {
+      toast.error('You are not authorized to update roles');
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -184,6 +186,7 @@ export const useRoleManagement = () => {
    */
   const deleteRole = async (roleId: string): Promise<{ success: boolean; error?: string }> => {
     if (!isAdmin) {
+      toast.error('You are not authorized to delete roles');
       return { success: false, error: 'Unauthorized' };
     }
 
