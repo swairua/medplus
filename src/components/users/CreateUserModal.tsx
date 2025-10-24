@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleDefinition } from '@/types/permissions';
+import { validateEmail, validatePasswordStrength, validateFullName } from '@/utils/validation';
 
 interface CreateUserModalProps {
   open: boolean;
