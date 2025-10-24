@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Mail, Send } from 'lucide-react';
 import { UserRole } from '@/contexts/AuthContext';
+import { validateEmail } from '@/utils/validation';
 
 interface InviteUserModalProps {
   open: boolean;
