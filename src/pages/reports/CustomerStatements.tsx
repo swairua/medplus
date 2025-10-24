@@ -301,6 +301,11 @@ export default function CustomerStatements() {
   };
 
   const handleExportReport = () => {
+    if (!canExportReports('export_reports')) {
+      toast.error('You do not have permission to export reports');
+      return;
+    }
+
     try {
       const statementsToExport = selectedCustomers.length > 0
         ? filteredStatements.filter(s => selectedCustomers.includes(s.customer_id))
