@@ -172,6 +172,11 @@ export default function LPOs() {
     toast.success('Local Purchase Order updated successfully!');
   };
 
+  const handleDeleteLPO = async (lpo: any) => {
+    setSelectedLPO(lpo);
+    setShowDeleteModal(true);
+  };
+
   // Calculate stats
   const totalLPOs = lpos?.length || 0;
   const draftLPOs = lpos?.filter(lpo => lpo.status === 'draft').length || 0;
