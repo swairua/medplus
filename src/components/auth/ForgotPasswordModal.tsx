@@ -29,12 +29,12 @@ export function ForgotPasswordModal({
   const [emailError, setEmailError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const validateEmail = () => {
+  const validateEmailField = () => {
     if (!email.trim()) {
       setEmailError('Email is required');
       return false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      setEmailError('Please enter a valid email');
+    } else if (!validateEmail(email)) {
+      setEmailError('Please enter a valid email address');
       return false;
     }
     setEmailError('');
