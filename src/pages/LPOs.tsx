@@ -38,6 +38,7 @@ import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { CreateLPOModal } from '@/components/lpo/CreateLPOModal';
 import { ViewLPOModal } from '@/components/lpo/ViewLPOModal';
 import { EditLPOModal } from '@/components/lpo/EditLPOModal';
+import { DeleteLPOModal } from '@/components/lpo/DeleteLPOModal';
 import { DatabaseAuditPanel } from '@/components/DatabaseAuditPanel';
 import { DirectForceMigration } from '@/components/DirectForceMigration';
 import { LPOCustomerSupplierAudit } from '@/components/LPOCustomerSupplierAudit';
