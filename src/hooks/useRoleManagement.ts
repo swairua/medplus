@@ -10,6 +10,7 @@ interface CreateRoleData {
   name: string;
   description?: string;
   permissions: Permission[];
+  company_id?: string;
 }
 
 interface UpdateRoleData {
@@ -70,13 +71,14 @@ export const useRoleManagement = () => {
     setLoading(true);
 
     try {
+      const companyIdToUse = data.company_id || currentUser.company_id;
       const { data: newRole, error: createError } = await supabase
         .from('roles')
         .insert({
           name: data.name,
           description: data.description,
           permissions: data.permissions,
-          company_id: currentUser.company_id,
+          company_id: companyIdToUse,
           role_type: 'custom',
           is_default: false,
         })
@@ -89,7 +91,7 @@ export const useRoleManagement = () => {
 
       // Log the role creation
       try {
-        await logRoleChange('create', newRole.id, data.name, currentUser.company_id, {
+        await logRoleChange('create', newRole.id, data.name, companyIdToUse, {
           permissions: data.permissions,
         });
       } catch (auditError) {
