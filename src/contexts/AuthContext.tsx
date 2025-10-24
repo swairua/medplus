@@ -419,25 +419,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (error) {
       setLoading(false);
-      // Return error without showing toast - let the component handle it
       return { error: error as AuthError };
     }
 
     if (data?.error) {
       setLoading(false);
-      // Return error without showing toast - let the component handle it
       return { error: data.error };
     }
 
-    // Immediately update auth state to avoid UI waiting for onAuthStateChange
+    // Enforce profiles table approval: only active users may proceed
     try {
       const session = (data as any)?.data?.session;
       const signedInUser = session?.user;
       if (signedInUser) {
+        const userProfile = await fetchProfile(signedInUser.id);
+        if (!userProfile || (userProfile.status && userProfile.status !== 'active')) {
+          try { await supabase.auth.signOut(); } catch {}
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          setLoading(false);
+          return { error: { name: 'AuthError', message: 'Account pending approval' } as unknown as AuthError };
+        }
         setSession(session);
         setUser(signedInUser);
-        // Fetch profile in background
-        fetchProfile(signedInUser.id).then(setProfile).catch(() => {});
+        setProfile(userProfile);
       }
     } catch {}
 
@@ -587,7 +593,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Compute derived state
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!user && profile?.status === 'active';
   // Treat any role containing 'admin' (case-insensitive) as administrator (covers 'admin', 'super_admin', etc.)
   const isAdmin = typeof profile?.role === 'string' && profile.role.toLowerCase().includes('admin');
 
