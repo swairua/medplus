@@ -520,6 +520,9 @@ export default function UserManagement() {
         </Card>
       )}
 
+      {/* User Audit Log */}
+      <UserAuditLog />
+
       {/* Modals */}
       <CreateUserModal
         open={modalState.type === 'create'}
