@@ -389,6 +389,17 @@ export function RoleManagement() {
                   }
                 />
               </div>
+
+              <div>
+                <Label htmlFor="company_id">Company ID</Label>
+                <Input
+                  id="company_id"
+                  placeholder="Company ID"
+                  value={formData.company_id}
+                  onChange={() => {}}
+                  disabled
+                />
+              </div>
             </div>
 
             <div>
