@@ -316,21 +316,33 @@ export const useUserManagement = () => {
       }
 
       // Create invitation
-      const { error } = await supabase
+      const { data: invitation, error } = await supabase
         .from('user_invitations')
         .insert({
           email,
           role,
           company_id: currentUser.company_id,
           invited_by: currentUser.id,
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         throw error;
       }
 
+      // Log user invitation in audit trail
+      try {
+        if (invitation) {
+          await logUserCreation(invitation.id, email, role, currentUser.company_id);
+        }
+      } catch (auditError) {
+        console.error('Failed to log user invitation to audit trail:', auditError);
+        // Don't fail the operation if audit logging fails
+      }
+
       // TODO: Send invitation email (would integrate with your email service)
-      
+
       toast.success('User invitation sent successfully');
       await fetchInvitations();
       return { success: true };
