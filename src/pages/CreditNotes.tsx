@@ -89,6 +89,7 @@ export default function CreditNotes() {
   const currentCompany = companies?.[0];
   const { data: creditNotes, isLoading, error, refetch } = useCreditNotes(currentCompany?.id);
   const downloadPDF = useCreditNotePDFDownload();
+  const deleteCreditNote = useDeleteCreditNote();
 
   // Filter and search logic
   const filteredCreditNotes = creditNotes?.filter(creditNote => {
