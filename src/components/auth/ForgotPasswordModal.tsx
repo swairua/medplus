@@ -44,12 +44,12 @@ export function ForgotPasswordModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateEmail()) {
+    if (!validateEmailField()) {
       return;
     }
 
     const { error } = await resetPassword(email);
-    
+
     if (!error) {
       setIsSuccess(true);
     }
