@@ -83,16 +83,21 @@ export const useUserManagement = () => {
 
   // Fetch pending invitations
   const fetchInvitations = async () => {
-    if (!currentUser?.company_id || !isAdmin) {
+    if (!isAdmin) {
       return;
     }
 
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from('user_invitations')
         .select('*')
-        .eq('company_id', currentUser.company_id)
         .order('invited_at', { ascending: false });
+
+      if (currentUser?.company_id) {
+        query.eq('company_id', currentUser.company_id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
