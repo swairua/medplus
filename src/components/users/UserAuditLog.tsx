@@ -103,8 +103,10 @@ export function UserAuditLog({ limit = 50 }: UserAuditLogProps) {
 
       setLogs(data || []);
     } catch (err) {
-      console.error('Error fetching audit logs:', err);
-      toast.error('Failed to fetch audit logs');
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      console.error('Error fetching audit logs:', errorMessage);
+      console.error('Full error details:', err);
+      toast.error(`Failed to fetch audit logs: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
