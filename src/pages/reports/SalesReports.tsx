@@ -97,7 +97,7 @@ export default function SalesReports() {
       return invoices.filter(invoice => new Date(invoice.invoice_date) >= filterStart);
     })();
 
-    if (!creatorFilter) return byDateRange;
+    if (creatorFilter === 'all') return byDateRange;
     return byDateRange.filter(inv => inv.created_by === creatorFilter);
   };
 
