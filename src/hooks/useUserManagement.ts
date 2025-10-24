@@ -24,6 +24,7 @@ export interface CreateUserData {
   phone?: string;
   department?: string;
   position?: string;
+  password?: string; // optional: admin can set password directly
 }
 
 export interface UpdateUserData {
@@ -113,7 +114,7 @@ export const useUserManagement = () => {
   };
 
   // Create a new user (admin only)
-  const createUser = async (userData: CreateUserData): Promise<{ success: boolean; error?: string }> => {
+  const createUser = async (userData: CreateUserData): Promise<{ success: boolean; password?: string; error?: string }> => {
     if (!isAdmin || !currentUser?.company_id) {
       return { success: false, error: 'Unauthorized' };
     }
@@ -133,9 +134,12 @@ export const useUserManagement = () => {
       }
 
       // Create auth user
+      // Use provided password if admin set one; otherwise generate a temporary one
+      const passwordToSet = userData.password && userData.password.length > 0 ? userData.password : generateTemporaryPassword();
+
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: userData.email,
-        password: generateTemporaryPassword(),
+        password: passwordToSet,
         email_confirm: true,
         user_metadata: {
           full_name: userData.full_name,
@@ -166,7 +170,7 @@ export const useUserManagement = () => {
 
       toast.success('User created successfully');
       await fetchUsers();
-      return { success: true };
+      return { success: true, password: passwordToSet };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'user creation');
       console.error('Error creating user:', err);
