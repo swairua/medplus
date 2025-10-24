@@ -212,6 +212,10 @@ export default function SalesReports() {
   const topProductsData = calculateTopProductsData();
   const topCustomersData = calculateTopCustomersData();
 
+  useEffect(() => {
+    if (companyId) fetchUsers();
+  }, [companyId]);
+
   // Calculate stats from filtered and unfiltered data
   const calculateStats = () => {
     const filteredInvoices = getFilteredInvoices();
