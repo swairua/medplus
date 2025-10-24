@@ -345,13 +345,38 @@ export default function SalesReports() {
   };
 
   // Handle loading and error states
-  if (isLoading) {
+  if (permissionsLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading sales reports...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!canViewReports('view_sales_reports')) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Sales Reports</h1>
+            <p className="text-muted-foreground">Analyze sales performance and trends</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center">
+                <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+                <p className="text-muted-foreground">You do not have permission to view sales reports.</p>
+                <p className="text-sm text-muted-foreground mt-2">Contact your administrator if you believe this is an error.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
