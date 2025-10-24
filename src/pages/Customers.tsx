@@ -216,6 +216,11 @@ export default function Customers() {
     }
   };
 
+  const handleDeleteCustomer = async (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setShowDeleteModal(true);
+  };
+
   const [showFilters, setShowFilters] = useState(false);
 
   const handleFilter = () => {
