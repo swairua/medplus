@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { executeSQL } from '@/utils/execSQL';
+import { supabase } from '@/integrations/supabase/client';
 
 export type AuditedEntity = 'quotation' | 'proforma' | 'invoice';
 
