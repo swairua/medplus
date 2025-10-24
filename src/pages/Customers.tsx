@@ -26,9 +26,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Filter,
   Eye,
   Edit,
@@ -37,14 +37,16 @@ import {
   FileText,
   DollarSign,
   Building2,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react';
-import { useCustomers, useCreateCustomer, useCompanies, useCustomerInvoices, useCustomerPayments } from '@/hooks/useDatabase';
+import { useCustomers, useCreateCustomer, useCompanies, useCustomerInvoices, useCustomerPayments, useDeleteCustomer } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
 import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
 import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
+import { DeleteCustomerModal } from '@/components/customers/DeleteCustomerModal';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 
@@ -75,7 +77,9 @@ export default function Customers() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [deleteRelatedCounts, setDeleteRelatedCounts] = useState<any>(null);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState('all');
@@ -85,6 +89,7 @@ export default function Customers() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: customers, isLoading, error } = useCustomers(currentCompany?.id);
+  const deleteCustomer = useDeleteCustomer();
 
   // Filter and search logic
   const filteredCustomers = customers?.filter(customer => {
@@ -209,6 +214,11 @@ export default function Customers() {
     } else {
       toast.error('No valid phone number available');
     }
+  };
+
+  const handleDeleteCustomer = async (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setShowDeleteModal(true);
   };
 
   const [showFilters, setShowFilters] = useState(false);
@@ -524,6 +534,15 @@ export default function Customers() {
                             <DollarSign className="h-4 w-4 mr-1" />
                             <span className="hidden sm:inline">Statement</span>
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteCustomer(customer)}
+                            title="Delete customer"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </TableCell>
@@ -574,6 +593,17 @@ export default function Customers() {
           toast.success('Invoice created successfully!');
         }}
         preSelectedCustomer={selectedCustomer}
+      />
+
+      <DeleteCustomerModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        customer={selectedCustomer}
+        relatedRecordsCounts={deleteRelatedCounts}
+        isDeleting={deleteCustomer.isPending}
+        onConfirm={async (customerId) => {
+          await deleteCustomer.mutateAsync(customerId);
+        }}
       />
     </div>
   );

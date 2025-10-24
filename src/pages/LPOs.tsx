@@ -28,15 +28,17 @@ import {
   AlertTriangle,
   FileText,
   User,
-  Database
+  Database,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useLPOs, useUpdateLPO, useCompanies } from '@/hooks/useDatabase';
+import { useLPOs, useUpdateLPO, useCompanies, useDeleteLPO } from '@/hooks/useDatabase';
 import { downloadLPOPDF } from '@/utils/pdfGenerator';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { CreateLPOModal } from '@/components/lpo/CreateLPOModal';
 import { ViewLPOModal } from '@/components/lpo/ViewLPOModal';
 import { EditLPOModal } from '@/components/lpo/EditLPOModal';
+import { DeleteLPOModal } from '@/components/lpo/DeleteLPOModal';
 import { DatabaseAuditPanel } from '@/components/DatabaseAuditPanel';
 import { DirectForceMigration } from '@/components/DirectForceMigration';
 import { LPOCustomerSupplierAudit } from '@/components/LPOCustomerSupplierAudit';
@@ -45,16 +47,19 @@ export default function LPOs() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedLPO, setSelectedLPO] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAuditPanel, setShowAuditPanel] = useState(false);
   const [showCustomerSupplierAudit, setShowCustomerSupplierAudit] = useState(false);
+  const [deleteRelatedCounts, setDeleteRelatedCounts] = useState<any>(null);
 
   // Database hooks
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: lpos, isLoading, error, refetch } = useLPOs(currentCompany?.id);
   const updateLPO = useUpdateLPO();
+  const deleteLPO = useDeleteLPO();
 
   // Note: Auto-migration removed - using manual migration guide instead
 
@@ -165,6 +170,11 @@ export default function LPOs() {
     setShowEditModal(false);
     setSelectedLPO(null);
     toast.success('Local Purchase Order updated successfully!');
+  };
+
+  const handleDeleteLPO = async (lpo: any) => {
+    setSelectedLPO(lpo);
+    setShowDeleteModal(true);
   };
 
   // Calculate stats
@@ -477,6 +487,14 @@ export default function LPOs() {
                             <Package className="h-4 w-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteLPO(lpo)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -513,6 +531,26 @@ export default function LPOs() {
         lpo={selectedLPO}
         onSuccess={handleEditSuccess}
       />
+
+      <DeleteLPOModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        lpo={selectedLPO}
+        relatedRecordsCounts={deleteRelatedCounts}
+        isDeleting={deleteLPO.isPending}
+        onConfirm={async (lpoId) => {
+          await deleteLPO.mutateAsync(lpoId);
+          refetch();
+        }}
+      />
+
+      {showAuditPanel && (
+        <DatabaseAuditPanel />
+      )}
+
+      {showCustomerSupplierAudit && (
+        <LPOCustomerSupplierAudit />
+      )}
     </div>
   );
 }

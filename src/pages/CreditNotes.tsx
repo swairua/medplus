@@ -25,9 +25,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Filter,
   Eye,
   Edit,
@@ -36,7 +36,8 @@ import {
   Send,
   Calendar,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useCreditNotes } from '@/hooks/useCreditNotes';
@@ -45,10 +46,12 @@ import { CreateCreditNoteModal } from '@/components/credit-notes/CreateCreditNot
 import { ViewCreditNoteModal } from '@/components/credit-notes/ViewCreditNoteModal';
 import { EditCreditNoteModal } from '@/components/credit-notes/EditCreditNoteModal';
 import { ApplyCreditNoteModal } from '@/components/credit-notes/ApplyCreditNoteModal';
+import { DeleteCreditNoteModal } from '@/components/credit-notes/DeleteCreditNoteModal';
 import { CreditNotesSetupGuide } from '@/components/credit-notes/CreditNotesSetupGuide';
 import { SimpleForeignKeyPatch } from '@/components/credit-notes/SimpleForeignKeyPatch';
 import { CreditNotesConnectionStatus } from '@/components/credit-notes/CreditNotesConnectionStatus';
 import { useCreditNotePDFDownload } from '@/hooks/useCreditNotePDF';
+import { useDeleteCreditNote } from '@/hooks/useCreditNotes';
 import type { CreditNote } from '@/hooks/useCreditNotes';
 
 function getStatusColor(status: string) {
@@ -72,6 +75,7 @@ export default function CreditNotes() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCreditNote, setSelectedCreditNote] = useState<CreditNote | null>(null);
 
   // Filter states
@@ -86,6 +90,7 @@ export default function CreditNotes() {
   const currentCompany = companies?.[0];
   const { data: creditNotes, isLoading, error, refetch } = useCreditNotes(currentCompany?.id);
   const downloadPDF = useCreditNotePDFDownload();
+  const deleteCreditNote = useDeleteCreditNote();
 
   // Filter and search logic
   const filteredCreditNotes = creditNotes?.filter(creditNote => {
@@ -484,6 +489,18 @@ export default function CreditNotes() {
                             Apply
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedCreditNote(creditNote);
+                            setShowDeleteModal(true);
+                          }}
+                          title="Delete credit note"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -522,6 +539,18 @@ export default function CreditNotes() {
         onOpenChange={setShowApplyModal}
         creditNote={selectedCreditNote}
         onSuccess={handleCreateSuccess}
+      />
+
+      {/* Delete Credit Note Modal */}
+      <DeleteCreditNoteModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        creditNote={selectedCreditNote}
+        isDeleting={deleteCreditNote.isPending}
+        onConfirm={async (creditNoteId) => {
+          await deleteCreditNote.mutateAsync(creditNoteId);
+          refetch();
+        }}
       />
     </div>
   );
