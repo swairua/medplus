@@ -115,7 +115,8 @@ export function CreateUserModal({
       phone: '',
       department: '',
       position: '',
-      password: ''
+      password: '',
+      company_id: undefined
     });
     setFormErrors({});
   };
