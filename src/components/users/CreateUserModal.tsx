@@ -114,6 +114,7 @@ export function CreateUserModal({
       phone: '',
       department: '',
       position: '',
+      password: ''
     });
     setFormErrors({});
   };
