@@ -116,15 +116,23 @@ export function RoleManagement() {
       return;
     }
 
-    const result = await createRole({
-      name: formData.name,
-      description: formData.description,
-      permissions: formData.permissions,
-    });
+    setSubmitting(true);
+    try {
+      const result = await createRole({
+        name: formData.name,
+        description: formData.description,
+        permissions: formData.permissions,
+      });
 
-    if (result.success) {
-      setCreateDialogOpen(false);
-      setFormData({ name: '', description: '', permissions: [] });
+      if (result.success) {
+        setCreateDialogOpen(false);
+        setFormData({ name: '', description: '', permissions: [] });
+      }
+    } catch (error) {
+      console.error('Error creating role:', error);
+      toast.error('Failed to create role');
+    } finally {
+      setSubmitting(false);
     }
   };
 
