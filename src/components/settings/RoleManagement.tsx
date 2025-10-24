@@ -48,6 +48,7 @@ import {
   Lock,
   AlertTriangle,
   History,
+  Loader2,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
