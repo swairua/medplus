@@ -231,19 +231,27 @@ export function CreateUserModal({
 
           <div className="space-y-2">
             <Label htmlFor="role">Role *</Label>
-            <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading}>
+            <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading || rolesLoading || roles.length === 0}>
               <SelectTrigger className={formErrors.role ? 'border-destructive' : ''}>
-                <SelectValue placeholder="Select a role" />
+                <SelectValue placeholder={rolesLoading ? 'Loading roles...' : 'Select a role'} />
               </SelectTrigger>
               <SelectContent>
-                {roleOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{option.label}</span>
-                      <span className="text-xs text-muted-foreground">{option.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {rolesLoading ? (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">Loading roles...</div>
+                ) : roles.length === 0 ? (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">No roles available</div>
+                ) : (
+                  roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{role.name}</span>
+                        {role.description && (
+                          <span className="text-xs text-muted-foreground">{role.description}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {formErrors.role && (
