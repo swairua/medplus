@@ -101,8 +101,8 @@ export function CreateUserModal({
       errors.role = 'Role is required';
     }
 
-    // If admin provided a password, validate length
-    if (formData.password && formData.password.length > 0 && formData.password.length < 8) {
+    // Require password (admin sets initial password)
+    if (!formData.password || formData.password.length < 8) {
       errors.password = 'Password must be at least 8 characters';
     }
 
@@ -302,12 +302,12 @@ export function CreateUserModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password (optional)</Label>
+            <Label htmlFor="password">Password *</Label>
             <div className="relative">
               <Input
                 id="password"
                 type="password"
-                placeholder="Leave empty to auto-generate"
+                placeholder="Set initial password (min 8 characters)"
                 value={formData.password}
                 onChange={handleInputChange('password')}
                 className={`pl-3 ${formErrors.password ? 'border-destructive' : ''}`}

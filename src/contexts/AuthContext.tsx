@@ -169,18 +169,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userProfile = await fetchProfile(newSession.user.id);
         
         if (mountedRef.current) {
-          setSession(newSession);
-          setUser(newSession.user);
-          setProfile(userProfile);
-          
-          // Update last login for sign-in events, but don't await to prevent blocking
-          if (event === 'SIGNED_IN' && userProfile) {
-            updateLastLogin(newSession.user.id).catch(err =>
-              logError('Sign-in last login update failed:', err, {
-                userId: newSession.user.id,
-                context: 'handleAuthStateChange'
-              })
-            );
+          // If profile exists but is not active, immediately sign out and block access
+          if (userProfile && userProfile.status && userProfile.status !== 'active') {
+            setTimeout(() => toast.error('Your account is pending approval. Please contact an administrator.'), 0);
+            try { await supabase.auth.signOut(); } catch {}
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+          } else {
+            setSession(newSession);
+            setUser(newSession.user);
+            setProfile(userProfile);
+
+            // Update last login for sign-in events, but don't await to prevent blocking
+            if (event === 'SIGNED_IN' && userProfile) {
+              updateLastLogin(newSession.user.id).catch(err =>
+                logError('Sign-in last login update failed:', err, {
+                  userId: newSession.user.id,
+                  context: 'handleAuthStateChange'
+                })
+              );
+            }
           }
         }
       } else {
@@ -410,25 +419,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (error) {
       setLoading(false);
-      // Return error without showing toast - let the component handle it
       return { error: error as AuthError };
     }
 
     if (data?.error) {
       setLoading(false);
-      // Return error without showing toast - let the component handle it
       return { error: data.error };
     }
 
-    // Immediately update auth state to avoid UI waiting for onAuthStateChange
+    // Enforce profiles table approval: only active users may proceed
     try {
       const session = (data as any)?.data?.session;
       const signedInUser = session?.user;
       if (signedInUser) {
+        const userProfile = await fetchProfile(signedInUser.id);
+        if (!userProfile || (userProfile.status && userProfile.status !== 'active')) {
+          try { await supabase.auth.signOut(); } catch {}
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          setLoading(false);
+          return { error: { name: 'AuthError', message: 'Account pending approval' } as unknown as AuthError };
+        }
         setSession(session);
         setUser(signedInUser);
-        // Fetch profile in background
-        fetchProfile(signedInUser.id).then(setProfile).catch(() => {});
+        setProfile(userProfile);
       }
     } catch {}
 
@@ -453,14 +468,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (error) {
       setLoading(false);
-      // Return error without showing toast - let the component handle it
       return { error: error as AuthError };
     }
 
     if (data?.error) {
       setLoading(false);
-      // Return error without showing toast - let the component handle it
       return { error: data.error };
+    }
+
+    // After signup, if an approved invitation exists for this email, activate the profile and assign role/company
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const newUser = userData?.user;
+      if (newUser?.id) {
+        const { data: invitation } = await supabase
+          .from('user_invitations')
+          .select('*')
+          .eq('email', email)
+          .eq('is_approved', true)
+          .order('invited_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (invitation) {
+          await supabase
+            .from('profiles')
+            .update({
+              status: 'active',
+              role: invitation.role,
+              company_id: invitation.company_id,
+              invited_by: invitation.invited_by,
+              invited_at: invitation.invited_at
+            })
+            .eq('id', newUser.id);
+
+          // Mark invitation as accepted
+          await supabase
+            .from('user_invitations')
+            .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+            .eq('id', invitation.id);
+        }
+      }
+    } catch (postSignupErr) {
+      console.warn('Post-signup activation step failed:', postSignupErr);
     }
 
     setTimeout(() => toast.success('Account created successfully'), 0);
@@ -578,7 +628,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Compute derived state
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!user && profile?.status === 'active';
   // Treat any role containing 'admin' (case-insensitive) as administrator (covers 'admin', 'super_admin', etc.)
   const isAdmin = typeof profile?.role === 'string' && profile.role.toLowerCase().includes('admin');
 

@@ -2,7 +2,7 @@ import { AuthError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 export interface AuthErrorInfo {
-  type: 'invalid_credentials' | 'email_not_confirmed' | 'network_error' | 'rate_limit' | 'server_error' | 'unknown';
+  type: 'invalid_credentials' | 'email_not_confirmed' | 'not_approved' | 'network_error' | 'rate_limit' | 'server_error' | 'unknown';
   message: string;
   action?: string;
   retry?: boolean;
@@ -43,6 +43,14 @@ export function analyzeAuthError(error: AuthError | Error): AuthErrorInfo {
       type: 'email_not_confirmed',
       message: 'Email address needs to be confirmed',
       action: 'Check your email for a confirmation link'
+    };
+  }
+
+  if (message.includes('pending approval') || message.includes('not approved')) {
+    return {
+      type: 'not_approved',
+      message: 'Your account is pending admin approval',
+      action: 'Please contact your administrator to activate your account'
     };
   }
 

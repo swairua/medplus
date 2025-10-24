@@ -377,11 +377,22 @@ export default function UserManagement() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => setModalState({ type: 'edit', user })}
-                              >
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit User
-                              </DropdownMenuItem>
+                                  onClick={() => setModalState({ type: 'edit', user })}
+                                >
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit User
+                                </DropdownMenuItem>
+                                {user.status === 'pending' && (
+                                  <DropdownMenuItem
+                                    onClick={async () => {
+                                      const res = await handleUpdateUser(user.id, { status: 'active' });
+                                      if (res.success) toast.success('User activated');
+                                    }}
+                                  >
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Activate User
+                                  </DropdownMenuItem>
+                                )}
                               {user.id !== currentUser?.id && (
                                 <DropdownMenuItem
                                   className="text-destructive"
