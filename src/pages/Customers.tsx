@@ -46,6 +46,7 @@ import { toast } from 'sonner';
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
 import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
 import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
+import { DeleteCustomerModal } from '@/components/customers/DeleteCustomerModal';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 
