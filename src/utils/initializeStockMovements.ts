@@ -132,7 +132,7 @@ export async function createStockMovements(movements: Array<{
       updated_at: new Date().toISOString()
     }));
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('stock_movements')
       .insert(movementData)
       .select();
