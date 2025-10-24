@@ -45,10 +45,12 @@ export function DeleteLPOModal({
 
   if (!lpo) return null;
 
+  const counts = relatedRecordsCounts ?? {};
+
   const totalRelatedRecords =
-    (relatedRecordsCounts.items || 0) +
-    (relatedRecordsCounts.received_items || 0) +
-    (relatedRecordsCounts.invoices || 0);
+    (counts.items || 0) +
+    (counts.received_items || 0) +
+    (counts.invoices || 0);
 
   const handleConfirm = async () => {
     if (confirmed) {
@@ -112,13 +114,13 @@ export function DeleteLPOModal({
               <AlertTitle>Impact of Deletion</AlertTitle>
               <AlertDescription className="mt-2 space-y-1">
                 <div>The following records will be deleted:</div>
-                {relatedRecordsCounts.items && relatedRecordsCounts.items > 0 && (
+                {counts.items && counts.items > 0 && (
                   <div>• {relatedRecordsCounts.items} line item(s)</div>
                 )}
-                {relatedRecordsCounts.received_items && relatedRecordsCounts.received_items > 0 && (
+                {counts.received_items && counts.received_items > 0 && (
                   <div>• {relatedRecordsCounts.received_items} received item record(s)</div>
                 )}
-                {relatedRecordsCounts.invoices && relatedRecordsCounts.invoices > 0 && (
+                {counts.invoices && counts.invoices > 0 && (
                   <div>• {relatedRecordsCounts.invoices} related invoice(s)</div>
                 )}
                 <div className="mt-2 text-xs">A complete audit log will be recorded.</div>
