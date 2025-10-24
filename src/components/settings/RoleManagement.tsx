@@ -142,16 +142,24 @@ export function RoleManagement() {
       return;
     }
 
-    const result = await updateRole(editingRole.id, {
-      name: formData.name,
-      description: formData.description,
-      permissions: formData.permissions,
-    });
+    setSubmitting(true);
+    try {
+      const result = await updateRole(editingRole.id, {
+        name: formData.name,
+        description: formData.description,
+        permissions: formData.permissions,
+      });
 
-    if (result.success) {
-      setEditDialogOpen(false);
-      setEditingRole(null);
-      setFormData({ name: '', description: '', permissions: [] });
+      if (result.success) {
+        setEditDialogOpen(false);
+        setEditingRole(null);
+        setFormData({ name: '', description: '', permissions: [] });
+      }
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast.error('Failed to update role');
+    } finally {
+      setSubmitting(false);
     }
   };
 
