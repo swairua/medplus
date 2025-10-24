@@ -142,7 +142,7 @@ export function UserAuditLog({ limit = 50 }: UserAuditLogProps) {
               <SelectValue placeholder="Filter by action" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Actions</SelectItem>
+              <SelectItem value="all">All Actions</SelectItem>
               <SelectItem value="CREATE">User Creation</SelectItem>
               <SelectItem value="APPROVE">User Approval</SelectItem>
               <SelectItem value="INVITE">User Invitation</SelectItem>
