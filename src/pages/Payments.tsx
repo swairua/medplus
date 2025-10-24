@@ -171,6 +171,50 @@ export default function Payments() {
     );
   }
 
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Payments</h1>
+            <p className="text-muted-foreground">Checking permissions...</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canViewPayment('view_payment')) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Payments</h1>
+            <p className="text-muted-foreground">Track and manage customer payments</p>
+          </div>
+        </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center">
+                <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+                <p className="text-muted-foreground">You do not have permission to view payments.</p>
+                <p className="text-sm text-muted-foreground mt-2">Contact your administrator if you believe this is an error.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Calculate stats from live data
   const totalReceivedToday = payments
     .filter(p => new Date(p.payment_date).toDateString() === new Date().toDateString())
