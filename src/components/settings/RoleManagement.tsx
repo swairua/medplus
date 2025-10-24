@@ -186,6 +186,7 @@ export function RoleManagement() {
       name: role.name,
       description: role.description || '',
       permissions: role.permissions,
+      company_id: (role as any).company_id || profile?.company_id || '',
     });
     setEditDialogOpen(true);
   };
