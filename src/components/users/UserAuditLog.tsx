@@ -116,7 +116,7 @@ export function UserAuditLog({ limit = 50 }: UserAuditLogProps) {
       log.details?.invited_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.details?.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesAction = !actionFilter || log.action === actionFilter;
+    const matchesAction = actionFilter === 'all' || log.action === actionFilter;
 
     return matchesSearch && matchesAction;
   });
