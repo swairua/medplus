@@ -352,7 +352,7 @@ export function useDeleteCreditNote() {
               allocations_count: creditNote.credit_note_allocations?.length || 0,
               affected_invoices: creditNote.credit_note_allocations?.map((a) => a.invoice_id) || [],
               inventory_affected: creditNote.affects_inventory,
-              stock_movements_reversed: creditNote.affects_inventory ? (stockMovements?.length || 0) : 0,
+              stock_movements_reversed: stockMovementsReversedCount,
             },
           },
         ]);
