@@ -686,6 +686,27 @@ Website: www.biolegendscientific.co.ke`;
         />
       )}
 
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete invoice {invoiceToDelete?.invoice_number}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction
+            onClick={async () => {
+              await performDeleteInvoice();
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={deleteInvoice.isPending}
+          >
+            {deleteInvoice.isPending ? 'Deleting...' : 'Delete'}
+          </AlertDialogAction>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Edit Invoice Modal */}
       {selectedInvoice && (
         <EditInvoiceModal
