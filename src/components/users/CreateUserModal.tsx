@@ -284,12 +284,12 @@ export function CreateUserModal({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={loading}
+              disabled={loading || submitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
+            <Button type="submit" disabled={loading || submitting}>
+              {loading || submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
