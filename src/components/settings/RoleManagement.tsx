@@ -475,6 +475,28 @@ export function RoleManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Audit History Dialog */}
+      <Dialog open={auditHistoryOpen} onOpenChange={setAuditHistoryOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>
+              Audit History
+            </DialogTitle>
+            <DialogDescription>
+              View all changes made to role: {selectedRoleForAudit?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto">
+            {selectedRoleForAudit && (
+              <RoleAuditHistory
+                roleId={selectedRoleForAudit.id}
+                roleName={selectedRoleForAudit.name}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
