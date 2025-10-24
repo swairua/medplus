@@ -14,12 +14,12 @@ WHERE table_name = 'invoices'
 ORDER BY ordinal_position;
 
 -- Add missing columns to invoices table
-ALTER TABLE invoices 
+ALTER TABLE invoices
 ADD COLUMN IF NOT EXISTS paid_amount DECIMAL(15,2) DEFAULT 0,
 ADD COLUMN IF NOT EXISTS balance_due DECIMAL(15,2) DEFAULT 0,
 ADD COLUMN IF NOT EXISTS lpo_number VARCHAR(100),
 ADD COLUMN IF NOT EXISTS affects_inventory BOOLEAN DEFAULT true,
-ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES users(id);
+ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES profiles(id) ON DELETE SET NULL;
 
 -- Update existing records with default values
 UPDATE invoices 
