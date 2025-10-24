@@ -372,15 +372,8 @@ VALUES (
     '/medplus-logo.png'
 );
 
--- Insert sample user
-INSERT INTO users (id, company_id, email, full_name, role) 
-VALUES (
-    '660e8400-e29b-41d4-a716-446655440000',
-    '550e8400-e29b-41d4-a716-446655440000',
-    'admin@medplusafrica.com',
-    'Dr. Sarah Johnson',
-    'admin'
-);
+-- Sample users are now managed via the profiles table and Supabase auth.users
+-- See migration 20250121120000_create_user_profiles_and_roles.sql for user management
 
 -- Insert sample customers
 INSERT INTO customers (company_id, customer_code, name, email, phone, address, city, country) VALUES
