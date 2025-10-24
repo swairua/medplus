@@ -89,6 +89,7 @@ export default function Customers() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: customers, isLoading, error } = useCustomers(currentCompany?.id);
+  const deleteCustomer = useDeleteCustomer();
 
   // Filter and search logic
   const filteredCustomers = customers?.filter(customer => {
