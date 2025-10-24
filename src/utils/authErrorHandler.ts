@@ -12,20 +12,30 @@ export function analyzeAuthError(error: AuthError | Error): AuthErrorInfo {
   // Safely extract error message with fallback
   let errorMessage = '';
 
-  if (error && typeof error === 'object') {
-    if ('message' in error && typeof error.message === 'string') {
-      errorMessage = error.message;
-    } else if ('error_description' in error && typeof (error as any).error_description === 'string') {
-      errorMessage = (error as any).error_description;
-    } else if ('details' in error && typeof (error as any).details === 'string') {
-      errorMessage = (error as any).details;
-    } else {
+  try {
+    if (!error) {
       errorMessage = 'An authentication error occurred';
+    } else if (error && typeof error === 'object') {
+      if ('message' in error && typeof error.message === 'string' && error.message) {
+        errorMessage = error.message;
+      } else if ('error_description' in error && typeof (error as any).error_description === 'string') {
+        errorMessage = (error as any).error_description;
+      } else if ('details' in error && typeof (error as any).details === 'string') {
+        errorMessage = (error as any).details;
+      } else if ('error' in error && typeof (error as any).error === 'string') {
+        errorMessage = (error as any).error;
+      } else if ('msg' in error && typeof (error as any).msg === 'string') {
+        errorMessage = (error as any).msg;
+      } else {
+        errorMessage = 'An authentication error occurred';
+      }
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else {
+      errorMessage = 'An unexpected authentication error occurred';
     }
-  } else if (typeof error === 'string') {
-    errorMessage = error;
-  } else {
-    errorMessage = 'An unexpected authentication error occurred';
+  } catch (e) {
+    errorMessage = 'An authentication error occurred';
   }
 
   const message = errorMessage.toLowerCase();
