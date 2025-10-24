@@ -223,6 +223,16 @@ Website: www.biolegendscientific.co.ke`;
     }
   };
 
+  const handleDeleteQuotation = async (quotation: Quotation) => {
+    try {
+      await deleteQuotation.mutateAsync(quotation.id);
+      refetch();
+      setSelectedQuotation(null);
+    } catch (error) {
+      console.error('Error deleting quotation:', error);
+    }
+  };
+
   const handleFilter = () => {
     toast.info('Advanced filter functionality coming soon!');
   };
