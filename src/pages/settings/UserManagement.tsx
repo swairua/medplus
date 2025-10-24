@@ -22,9 +22,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   UserPlus,
   Edit,
   Trash2,
@@ -34,7 +34,8 @@ import {
   Clock,
   Users,
   UserX,
-  MoreHorizontal
+  MoreHorizontal,
+  KeyRound
 } from 'lucide-react';
 import {
   DropdownMenu,
