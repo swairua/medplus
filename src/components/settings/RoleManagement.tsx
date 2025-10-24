@@ -78,6 +78,7 @@ const PERMISSION_GROUPS: Record<string, Permission[]> = {
 
 export function RoleManagement() {
   const { isAdmin, profile } = useAuth();
+  const currentCompanyId = useCurrentCompanyId();
   const { roles, loading, createRole, updateRole, deleteRole } = useRoleManagement();
 
   const [searchTerm, setSearchTerm] = useState('');
