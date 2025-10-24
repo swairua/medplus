@@ -47,11 +47,15 @@ import {
   Shield,
   Lock,
   AlertTriangle,
+  History,
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import useRoleManagement from '@/hooks/useRoleManagement';
 import { Permission, PERMISSION_DESCRIPTIONS, RoleDefinition } from '@/types/permissions';
 import { toast } from 'sonner';
+import { RoleAuditHistory } from '@/components/roles/RoleAuditHistory';
+import { RoleAnalytics } from '@/components/roles/RoleAnalytics';
 
 // Group permissions by category
 const PERMISSION_GROUPS: Record<string, Permission[]> = {
