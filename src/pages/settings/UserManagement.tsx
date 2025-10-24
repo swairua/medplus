@@ -406,9 +406,22 @@ export default function UserManagement() {
       {invitations.length > 0 && (
         <Card className="shadow-card">
           <CardHeader>
-            <CardTitle>Pending Invitations</CardTitle>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle>Pending Invitations</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Review and approve user invitations before they can create accounts
+                </p>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
+              <p className="text-sm text-blue-900 dark:text-blue-100">
+                <strong>User Approval Process:</strong> New user invitations require manual approval from an administrator before users can create their accounts. This ensures proper user management and security compliance.
+              </p>
+            </div>
+
             <Table>
               <TableHeader>
                 <TableRow>
@@ -417,6 +430,7 @@ export default function UserManagement() {
                   <TableHead>Invited</TableHead>
                   <TableHead>Expires</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Approval Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -440,8 +454,52 @@ export default function UserManagement() {
                         {invitation.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {invitation.is_approved ? (
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="outline" className="bg-success-light text-success border-success/20">
+                              <UserCheck className="h-3 w-3 mr-1" />
+                              Approved
+                            </Badge>
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="bg-warning-light text-warning border-warning/20">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Pending Approval
+                          </Badge>
+                        )}
+                        {invitation.approved_at && (
+                          <p className="text-xs text-muted-foreground">
+                            Approved on {new Date(invitation.approved_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
-                      {invitation.status === 'pending' && (
+                      {invitation.status === 'pending' && !invitation.is_approved && (
+                        <div className="flex items-center justify-end space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleApproveInvitation(invitation.id)}
+                            className="text-success hover:text-success"
+                          >
+                            <UserCheck className="h-4 w-4 mr-2" />
+                            Approve
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRevokeInvitation(invitation.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <UserX className="h-4 w-4 mr-2" />
+                            Revoke
+                          </Button>
+                        </div>
+                      )}
+                      {invitation.status === 'pending' && invitation.is_approved && (
                         <Button
                           variant="ghost"
                           size="sm"
