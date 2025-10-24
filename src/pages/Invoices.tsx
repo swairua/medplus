@@ -549,6 +549,11 @@ Website: www.biolegendscientific.co.ke`;
                       {formatCurrency(invoice.balance_due || 0)}
                     </TableCell>
                     <TableCell>
+                      <div className="text-sm">
+                        {invoice.created_by_profile?.full_name || invoice.created_by || 'System'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="outline" className={getStatusColor(invoice.status)}>
                         {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                       </Badge>
