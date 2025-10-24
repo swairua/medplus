@@ -149,8 +149,21 @@ export const useUserManagement = () => {
       // we'll create an invitation which the user can accept via signup
       const companyToSet = userData.company_id || currentUser?.company_id;
 
-      if (!companyToSet) {
-        return { success: false, error: 'Company must be assigned to user' };
+      // If no company is provided, try to get the first company
+      let finalCompanyId = companyToSet;
+      if (!finalCompanyId) {
+        // Fetch first available company
+        const { data: companies } = await supabase
+          .from('companies')
+          .select('id')
+          .limit(1)
+          .single();
+
+        finalCompanyId = companies?.id;
+      }
+
+      if (!finalCompanyId) {
+        return { success: false, error: 'No company available. Please create a company first.' };
       }
 
       // Create user invitation
@@ -159,7 +172,7 @@ export const useUserManagement = () => {
         .insert({
           email: userData.email,
           role: userData.role,
-          company_id: companyToSet,
+          company_id: finalCompanyId,
           invited_by: currentUser?.id,
           status: 'pending',
         })
