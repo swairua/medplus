@@ -264,6 +264,7 @@ export function useDeleteCreditNote() {
       if (!creditNote) throw new Error('Credit note not found');
 
       // 2. If credit note affects inventory, reverse stock movements
+      let stockMovementsReversedCount = 0;
       if (creditNote.affects_inventory) {
         const { data: stockMovements, error: stockError } = await supabase
           .from('stock_movements')
@@ -294,6 +295,8 @@ export function useDeleteCreditNote() {
           if (reversalError && !reversalError.message.includes('does not exist')) {
             throw reversalError;
           }
+
+          stockMovementsReversedCount = stockMovements.length;
         }
       }
 
