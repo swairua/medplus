@@ -531,6 +531,26 @@ export default function LPOs() {
         lpo={selectedLPO}
         onSuccess={handleEditSuccess}
       />
+
+      <DeleteLPOModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        lpo={selectedLPO}
+        relatedRecordsCounts={deleteRelatedCounts}
+        isDeleting={deleteLPO.isPending}
+        onConfirm={async (lpoId) => {
+          await deleteLPO.mutateAsync(lpoId);
+          refetch();
+        }}
+      />
+
+      {showAuditPanel && (
+        <DatabaseAuditPanel />
+      )}
+
+      {showCustomerSupplierAudit && (
+        <LPOCustomerSupplierAudit />
+      )}
     </div>
   );
 }
