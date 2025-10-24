@@ -54,6 +54,10 @@ export default function Proforma() {
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Inline delete dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [proformaToDelete, setProformaToDelete] = useState<ProformaWithItems | null>(null);
+
   // Get company data
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
