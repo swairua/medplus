@@ -117,28 +117,6 @@ export default function Invoices() {
   const { data: invoices, isLoading, error, refetch } = useInvoices(currentCompany?.id);
   const deleteInvoice = useDeleteInvoice();
 
-  // Inline delete dialog state
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
-
-  const handleDeleteInvoice = (invoice: Invoice) => {
-    setInvoiceToDelete(invoice);
-    setShowDeleteDialog(true);
-  };
-
-  const performDeleteInvoice = async () => {
-    if (!invoiceToDelete) return;
-    try {
-      await deleteInvoice.mutateAsync(invoiceToDelete.id);
-      refetch();
-      setSelectedInvoice(null);
-      setShowDeleteDialog(false);
-      toast.success('Invoice deleted');
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
-      toast.error('Failed to delete invoice');
-    }
-  };
 
   // Filter and search logic
   const filteredInvoices = invoices?.filter(invoice => {
@@ -642,15 +620,43 @@ Website: www.biolegendscientific.co.ke`;
                               <DollarSign className="h-4 w-4 mr-1" />
                               {(invoice.balance_due || 0) > 0 ? 'Record Payment' : 'Payment Adjustment'}
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => { setInvoiceToDelete(invoice); setShowDeleteDialog(true); }}
-                              title="Delete invoice"
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Delete invoice"
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-48">
+                                <div className="text-sm mb-2">Delete invoice {invoice.invoice_number}?</div>
+                                <div className="flex justify-end space-x-2">
+                                  <Button variant="ghost" size="sm" onClick={() => {}}>
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={async () => {
+                                      try {
+                                        await deleteInvoice.mutateAsync(invoice.id);
+                                        refetch();
+                                        setSelectedInvoice(null);
+                                        toast.success('Invoice deleted');
+                                      } catch (e) {
+                                        console.error('Delete failed:', e);
+                                        toast.error('Failed to delete invoice');
+                                      }
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </>
                         )}
                       </div>
@@ -686,26 +692,6 @@ Website: www.biolegendscientific.co.ke`;
         />
       )}
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete invoice {invoiceToDelete?.invoice_number}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogAction
-            onClick={async () => {
-              await performDeleteInvoice();
-            }}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            disabled={deleteInvoice.isPending}
-          >
-            {deleteInvoice.isPending ? 'Deleting...' : 'Delete'}
-          </AlertDialogAction>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Edit Invoice Modal */}
       {selectedInvoice && (
