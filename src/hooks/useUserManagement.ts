@@ -187,6 +187,14 @@ export const useUserManagement = () => {
         throw invitationError;
       }
 
+      // Log user creation in audit trail
+      try {
+        await logUserCreation(invitation.id, userData.email, userData.role, finalCompanyId);
+      } catch (auditError) {
+        console.error('Failed to log user creation to audit trail:', auditError);
+        // Don't fail the operation if audit logging fails
+      }
+
       // Note: In a production app, you would send an invitation email here
       // with a signup link containing the invitation_token
       // For now, generate a temporary password that you can share with the user
