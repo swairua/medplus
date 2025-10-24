@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,9 @@ import { Loader2, Mail, User, Phone, Building, MapPin } from 'lucide-react';
 import { UserRole } from '@/contexts/AuthContext';
 import { CreateUserData } from '@/hooks/useUserManagement';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { RoleDefinition } from '@/types/permissions';
 
 interface CreateUserModalProps {
   open: boolean;
