@@ -279,6 +279,15 @@ export function RoleManagement() {
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedRoleForAudit(role);
+                              setAuditHistoryOpen(true);
+                            }}
+                          >
+                            <History className="mr-2 h-4 w-4" />
+                            Audit History
+                          </DropdownMenuItem>
                           {!role.is_default && (
                             <DropdownMenuItem
                               className="text-destructive"
