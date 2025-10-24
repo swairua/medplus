@@ -47,16 +47,31 @@ interface ViewInvoiceModalProps {
   onDelete?: () => void;
 }
 
-export function ViewInvoiceModal({ 
-  open, 
-  onOpenChange, 
-  invoice, 
-  onEdit, 
-  onDownload, 
-  onSend, 
-  onRecordPayment 
+export function ViewInvoiceModal({
+  open,
+  onOpenChange,
+  invoice,
+  onEdit,
+  onDownload,
+  onSend,
+  onRecordPayment,
+  onDelete
 }: ViewInvoiceModalProps) {
   if (!invoice) return null;
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deleteInvoice = useDeleteInvoice();
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteInvoice.mutateAsync(invoice.id);
+      setShowDeleteDialog(false);
+      onOpenChange(false);
+      onDelete?.();
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
