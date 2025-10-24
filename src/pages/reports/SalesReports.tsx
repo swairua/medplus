@@ -679,10 +679,10 @@ export default function SalesReports() {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Average Order Value</span>
                 <span className="font-medium">
-                  ${invoices && invoices.length > 0
-                    ? (invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) / invoices.length).toFixed(2)
-                    : '0.00'
-                  }
+                  {formatCurrency(invoices && invoices.length > 0
+                    ? (invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) / invoices.length)
+                    : 0
+                  )}
                 </span>
               </div>
             </div>
