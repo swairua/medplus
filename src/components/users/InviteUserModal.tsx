@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Mail, Send } from 'lucide-react';
 import { UserRole } from '@/contexts/AuthContext';
+import { validateEmail } from '@/utils/validation';
 
 interface InviteUserModalProps {
   open: boolean;
@@ -44,8 +45,8 @@ export function InviteUserModal({
 
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please enter a valid email';
+    } else if (!validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address';
     }
 
     if (!formData.role) {

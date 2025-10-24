@@ -20,21 +20,54 @@ export const extractErrorDetails = (error: unknown, context?: Record<string, any
     context
   };
 
-  if (error instanceof Error) {
-    details.message = error.message;
-    if ('code' in error) details.code = (error as any).code;
-    if ('details' in error) details.details = (error as any).details;
-    if ('hint' in error) details.hint = (error as any).hint;
-  } else if (error && typeof error === 'object') {
-    details.message = (error as any).message || String(error);
-    if ('code' in error) details.code = (error as any).code;
-    if ('details' in error) details.details = (error as any).details;
-    if ('hint' in error) details.hint = (error as any).hint;
-  } else {
-    details.message = String(error);
+  try {
+    if (error instanceof Error) {
+      details.message = error.message || 'Error with no message';
+      if ('code' in error && error.code) details.code = (error as any).code;
+      if ('details' in error && error.details) details.details = (error as any).details;
+      if ('hint' in error && error.hint) details.hint = (error as any).hint;
+    } else if (error && typeof error === 'object') {
+      const errorObj = error as any;
+      details.message = (
+        errorObj.message ||
+        errorObj.error_description ||
+        errorObj.details ||
+        errorObj.hint ||
+        'Unknown error'
+      );
+      if (errorObj.code) details.code = errorObj.code;
+      if (errorObj.details && typeof errorObj.details === 'string') details.details = errorObj.details;
+      if (errorObj.hint && typeof errorObj.hint === 'string') details.hint = errorObj.hint;
+    } else if (typeof error === 'string') {
+      details.message = error || 'Unknown error';
+    } else {
+      details.message = 'Unknown error type';
+    }
+  } catch (extractError) {
+    details.message = 'Failed to extract error details';
   }
 
   return details;
+};
+
+/**
+ * Safely serialize objects, handling circular references
+ */
+const safeStringify = (obj: any): string => {
+  const seen = new WeakSet();
+  try {
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+      }
+      return value;
+    }, 2);
+  } catch {
+    return String(obj);
+  }
 };
 
 /**
@@ -42,7 +75,7 @@ export const extractErrorDetails = (error: unknown, context?: Record<string, any
  */
 export const logError = (label: string, error: unknown, context?: Record<string, any>) => {
   const errorDetails = extractErrorDetails(error, context);
-  console.error(label, errorDetails);
+  console.error(label, safeStringify(errorDetails));
 };
 
 /**
@@ -50,7 +83,7 @@ export const logError = (label: string, error: unknown, context?: Record<string,
  */
 export const logWarning = (label: string, error: unknown, context?: Record<string, any>) => {
   const errorDetails = extractErrorDetails(error, context);
-  console.warn(label, errorDetails);
+  console.warn(label, safeStringify(errorDetails));
 };
 
 /**

@@ -132,7 +132,7 @@ export const useUserManagement = () => {
   // Create a new user (admin only) - Admin sets password; no self signup/email verify
   const createUser = async (userData: CreateUserData): Promise<{ success: boolean; password?: string; error?: string }> => {
     if (!isAdmin) {
-      return { success: false, error: 'Unauthorized' };
+      return { success: false, error: 'Unauthorized: Only administrators can create users' };
     }
 
     if (!userData.password || userData.password.length < 8) {
@@ -170,12 +170,20 @@ export const useUserManagement = () => {
         return { success: false, error: 'No company available. Please create a company first.' };
       }
 
-      // Call Edge Function (admin-create-user) to create auth user + profile with status 'pending'
+      // Validate that admin can create users in this company (if not super-admin)
+      if (currentUser?.company_id && currentUser.company_id !== finalCompanyId) {
+        return { success: false, error: 'You can only create users for your own company' };
+      }
+
+      // Call Edge Function (admin-create-user) to create auth user + profile
       const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
         body: {
           email: userData.email,
           password: userData.password,
           full_name: userData.full_name,
+          phone: userData.phone,
+          department: userData.department,
+          position: userData.position,
           role: userData.role,
           company_id: finalCompanyId,
           invited_by: currentUser?.id,
@@ -183,7 +191,17 @@ export const useUserManagement = () => {
       });
 
       if (fnError) {
-        throw fnError;
+        const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'user creation');
+        return { success: false, error: fnErrorMessage || 'Failed to create user' };
+      }
+
+      // Check if response indicates error
+      if (fnData && !fnData.success) {
+        return { success: false, error: fnData.error || 'Failed to create user' };
+      }
+
+      if (!fnData || !fnData.user_id) {
+        return { success: false, error: 'Failed to create user - no user ID returned' };
       }
 
       toast.success('User created successfully');
@@ -195,7 +213,7 @@ export const useUserManagement = () => {
       };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'user creation');
-      console.error('Error creating user:', err);
+      console.error('Error creating user:', errorMessage, err);
       toast.error(`Failed to create user: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
@@ -551,6 +569,50 @@ export const useUserManagement = () => {
     };
   };
 
+  // Reset user password (admin only) - sends password reset email
+  const resetUserPassword = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    setLoading(true);
+
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) {
+        return { success: false, error: 'User not found' };
+      }
+
+      // Call Edge Function to send password reset email
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-reset-password', {
+        body: {
+          email: user.email,
+          user_id: userId,
+          admin_id: currentUser?.id,
+        }
+      });
+
+      if (fnError) {
+        const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'password reset');
+        return { success: false, error: fnErrorMessage || 'Failed to send password reset email' };
+      }
+
+      if (fnData && !fnData.success) {
+        return { success: false, error: fnData.error || 'Failed to send password reset email' };
+      }
+
+      toast.success(`Password reset email sent to ${user.email}`);
+      return { success: true };
+    } catch (err) {
+      const errorMessage = parseErrorMessageWithCodes(err, 'password reset');
+      console.error('Error resetting password:', errorMessage, err);
+      toast.error(`Failed to reset password: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load data on mount
   useEffect(() => {
     if (isAdmin) {
@@ -573,6 +635,7 @@ export const useUserManagement = () => {
     revokeInvitation,
     approveInvitation,
     acceptInvitation,
+    resetUserPassword,
     getUserStats,
     promoteAllToAdmin,
   };

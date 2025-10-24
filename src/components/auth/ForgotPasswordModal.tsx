@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Mail, ArrowLeft } from 'lucide-react';
+import { validateEmail } from '@/utils/validation';
 
 interface ForgotPasswordModalProps {
   open: boolean;
@@ -28,12 +29,12 @@ export function ForgotPasswordModal({
   const [emailError, setEmailError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const validateEmail = () => {
+  const validateEmailField = () => {
     if (!email.trim()) {
       setEmailError('Email is required');
       return false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      setEmailError('Please enter a valid email');
+    } else if (!validateEmail(email)) {
+      setEmailError('Please enter a valid email address');
       return false;
     }
     setEmailError('');
@@ -43,12 +44,12 @@ export function ForgotPasswordModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateEmail()) {
+    if (!validateEmailField()) {
       return;
     }
 
     const { error } = await resetPassword(email);
-    
+
     if (!error) {
       setIsSuccess(true);
     }

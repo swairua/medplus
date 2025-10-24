@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleDefinition } from '@/types/permissions';
+import { validateEmail, validatePasswordStrength, validateFullName } from '@/utils/validation';
 
 interface CreateUserModalProps {
   open: boolean;
@@ -87,23 +88,27 @@ export function CreateUserModal({
   const validateForm = () => {
     const errors: Record<string, string> = {};
 
+    // Email validation
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please enter a valid email';
+    } else if (!validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address';
     }
 
+    // Full name validation
     if (!formData.full_name.trim()) {
       errors.full_name = 'Full name is required';
     }
 
+    // Role validation
     if (!formData.role) {
       errors.role = 'Role is required';
     }
 
-    // Require password (admin sets initial password)
-    if (!formData.password || formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
+    // Password validation
+    const passwordValidation = validatePasswordStrength(formData.password);
+    if (!passwordValidation.valid) {
+      errors.password = passwordValidation.error!;
     }
 
     setFormErrors(errors);
@@ -307,7 +312,7 @@ export function CreateUserModal({
               <Input
                 id="password"
                 type="password"
-                placeholder="Set initial password (min 8 characters)"
+                placeholder="Set initial password (min 8 characters, uppercase, lowercase, numbers)"
                 value={formData.password}
                 onChange={handleInputChange('password')}
                 className={`pl-3 ${formErrors.password ? 'border-destructive' : ''}`}
@@ -316,6 +321,9 @@ export function CreateUserModal({
             </div>
             {formErrors.password && (
               <p className="text-sm text-destructive">{formErrors.password}</p>
+            )}
+            {!formErrors.password && formData.password && (
+              <p className="text-xs text-success">✓ Password meets requirements</p>
             )}
           </div>
 
