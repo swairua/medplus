@@ -83,7 +83,7 @@ export const logError = (label: string, error: unknown, context?: Record<string,
  */
 export const logWarning = (label: string, error: unknown, context?: Record<string, any>) => {
   const errorDetails = extractErrorDetails(error, context);
-  console.warn(label, errorDetails);
+  console.warn(label, safeStringify(errorDetails));
 };
 
 /**
