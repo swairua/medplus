@@ -191,7 +191,8 @@ export const useUserManagement = () => {
       });
 
       if (fnError) {
-        throw fnError;
+        const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'user creation');
+        return { success: false, error: fnErrorMessage || 'Failed to create user' };
       }
 
       // Check if response indicates error
@@ -212,7 +213,7 @@ export const useUserManagement = () => {
       };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'user creation');
-      console.error('Error creating user:', err);
+      console.error('Error creating user:', errorMessage, err);
       toast.error(`Failed to create user: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
