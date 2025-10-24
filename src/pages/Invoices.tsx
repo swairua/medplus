@@ -645,7 +645,7 @@ Website: www.biolegendscientific.co.ke`;
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDeleteInvoice(invoice)}
+                              onClick={() => { setInvoiceToDelete(invoice); setShowDeleteDialog(true); }}
                               title="Delete invoice"
                               className="text-destructive"
                             >
