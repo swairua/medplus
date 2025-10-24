@@ -277,11 +277,11 @@ export default function Inventory() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" onClick={handleStockAdjustment}>
+          <Button variant="outline" onClick={handleStockAdjustment} disabled={!canManageInventory('manage_inventory')}>
             <Package className="h-4 w-4 mr-2" />
             Stock Adjustment
           </Button>
-          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleAddItem}>
+          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleAddItem} disabled={!canCreateInventory('create_inventory')}>
             <Plus className="h-4 w-4 mr-2" />
             Add Item
           </Button>
