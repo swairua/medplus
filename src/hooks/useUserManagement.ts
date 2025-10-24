@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth, UserProfile, UserRole, UserStatus } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseErrorMessage, parseErrorMessageWithCodes } from '@/utils/errorHelpers';
+import { logUserCreation, logUserApproval } from '@/utils/auditLogger';
 
 export interface UserInvitation {
   id: string;
@@ -186,6 +187,14 @@ export const useUserManagement = () => {
         throw invitationError;
       }
 
+      // Log user creation in audit trail
+      try {
+        await logUserCreation(invitation.id, userData.email, userData.role, finalCompanyId);
+      } catch (auditError) {
+        console.error('Failed to log user creation to audit trail:', auditError);
+        // Don't fail the operation if audit logging fails
+      }
+
       // Note: In a production app, you would send an invitation email here
       // with a signup link containing the invitation_token
       // For now, generate a temporary password that you can share with the user
@@ -307,21 +316,33 @@ export const useUserManagement = () => {
       }
 
       // Create invitation
-      const { error } = await supabase
+      const { data: invitation, error } = await supabase
         .from('user_invitations')
         .insert({
           email,
           role,
           company_id: currentUser.company_id,
           invited_by: currentUser.id,
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         throw error;
       }
 
+      // Log user invitation in audit trail
+      try {
+        if (invitation) {
+          await logUserCreation(invitation.id, email, role, currentUser.company_id);
+        }
+      } catch (auditError) {
+        console.error('Failed to log user invitation to audit trail:', auditError);
+        // Don't fail the operation if audit logging fails
+      }
+
       // TODO: Send invitation email (would integrate with your email service)
-      
+
       toast.success('User invitation sent successfully');
       await fetchInvitations();
       return { success: true };
@@ -456,6 +477,13 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
+      // Get invitation details first for audit logging
+      const { data: invitationData } = await supabase
+        .from('user_invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .single();
+
       const { error } = await supabase
         .from('user_invitations')
         .update({
@@ -467,6 +495,16 @@ export const useUserManagement = () => {
 
       if (error) {
         throw error;
+      }
+
+      // Log approval in audit trail
+      try {
+        if (invitationData) {
+          await logUserApproval(invitationId, invitationData.email, invitationData.company_id, 'approved');
+        }
+      } catch (auditError) {
+        console.error('Failed to log approval to audit trail:', auditError);
+        // Don't fail the operation if audit logging fails
       }
 
       toast.success('Invitation approved successfully');

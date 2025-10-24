@@ -1007,6 +1007,25 @@ export const useDeleteQuotation = () => {
 
   return useMutation({
     mutationFn: async (quotationId: string) => {
+      // Check permission before deletion
+      const { profile } = await (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.id) throw new Error('Not authenticated');
+
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role, permissions')
+          .eq('id', user.id)
+          .single();
+
+        return { profile: profileData };
+      })();
+
+      // Check if user has delete_quotation permission
+      if (profile && !profile.permissions?.includes('delete_quotation')) {
+        throw new Error('You do not have permission to delete quotations');
+      }
+
       // Fetch snapshot for audit
       let snapshot: any = null;
       let companyId: string | null = null;

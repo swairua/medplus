@@ -247,6 +247,29 @@ export function useDeleteCreditNote() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Check permission before deletion
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('company_id, role')
+        .eq('id', user.id)
+        .single();
+
+      if (!profileData) throw new Error('User profile not found');
+
+      const { data: roleData } = await supabase
+        .from('roles')
+        .select('permissions')
+        .eq('company_id', profileData.company_id)
+        .eq('name', profileData.role)
+        .single();
+
+      if (!roleData?.permissions?.includes('delete_credit_note')) {
+        throw new Error('You do not have permission to delete credit notes');
+      }
+
       // 1. Fetch the complete credit note with all related data
       const { data: creditNote, error: fetchError } = await supabase
         .from('credit_notes')

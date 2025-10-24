@@ -275,6 +275,21 @@ export const useDeleteInvoice = () => {
 
   return useMutation({
     mutationFn: async (invoiceId: string) => {
+      // Check permission before deletion
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { data: roleData } = await supabase
+        .from('roles')
+        .select('permissions')
+        .eq('company_id', (await supabase.from('invoices').select('company_id').eq('id', invoiceId).single()).data?.company_id)
+        .in('name', [(await supabase.from('profiles').select('role').eq('id', user.id).single()).data?.role || ''])
+        .single();
+
+      if (!roleData?.permissions?.includes('delete_invoice')) {
+        throw new Error('You do not have permission to delete invoices');
+      }
+
       // Snapshot for audit
       let snapshot: any = null;
       let companyId: string | null = null;
