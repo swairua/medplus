@@ -508,6 +508,7 @@ Website: www.biolegendscientific.co.ke`;
                   <TableHead>Amount</TableHead>
                   <TableHead>Paid</TableHead>
                   <TableHead>Balance</TableHead>
+                  <TableHead>Created By</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
