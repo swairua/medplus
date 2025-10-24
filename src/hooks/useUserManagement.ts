@@ -392,13 +392,44 @@ export const useUserManagement = () => {
     }
   };
 
+  // Promote all existing users to admin (dangerous - admin only)
+  const promoteAllToAdmin = async (): Promise<{ success: boolean; count?: number; error?: string }> => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ role: 'admin' })
+        .neq('role', 'admin');
+
+      if (error) {
+        throw error;
+      }
+
+      const updatedCount = Array.isArray(data) ? data.length : 0;
+      toast.success(`Promoted ${updatedCount} users to admin`);
+      await fetchUsers();
+      return { success: true, count: updatedCount };
+    } catch (err) {
+      const errorMessage = parseErrorMessageWithCodes(err, 'promote all');
+      console.error('Error promoting users:', err);
+      toast.error(`Failed to promote users: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Get user statistics
   const getUserStats = () => {
     const totalUsers = users.length;
     const activeUsers = users.filter(u => u.status === 'active').length;
     const pendingUsers = users.filter(u => u.status === 'pending').length;
     const inactiveUsers = users.filter(u => u.status === 'inactive').length;
-    
+
     const adminUsers = users.filter(u => u.role === 'admin').length;
     const accountantUsers = users.filter(u => u.role === 'accountant').length;
     const stockManagerUsers = users.filter(u => u.role === 'stock_manager').length;
@@ -421,11 +452,11 @@ export const useUserManagement = () => {
 
   // Load data on mount
   useEffect(() => {
-    if (isAdmin && currentUser?.company_id) {
+    if (isAdmin) {
       fetchUsers();
       fetchInvitations();
     }
-  }, [isAdmin, currentUser?.company_id]);
+  }, [isAdmin]);
 
   return {
     users,
@@ -441,6 +472,7 @@ export const useUserManagement = () => {
     revokeInvitation,
     acceptInvitation,
     getUserStats,
+    promoteAllToAdmin,
   };
 };
 
