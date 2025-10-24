@@ -26,7 +26,7 @@ import {
   FileText,
   CheckCircle
 } from 'lucide-react';
-import { useProformas, useConvertProformaToInvoice, type ProformaWithItems } from '@/hooks/useProforma';
+import { useProformas, useConvertProformaToInvoice, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
 import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
