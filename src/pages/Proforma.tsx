@@ -46,6 +46,7 @@ import { ProformaSetupBanner } from '@/components/proforma/ProformaSetupBanner';
 import { downloadInvoicePDF, downloadQuotationPDF } from '@/utils/pdfGenerator';
 import { formatCurrency } from '@/utils/taxCalculation';
 import { ensureProformaSchema } from '@/utils/proformaDatabaseSetup';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function Proforma() {
   const [showCreateModal, setShowCreateModal] = useState(false);
