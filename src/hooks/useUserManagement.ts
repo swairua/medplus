@@ -25,6 +25,7 @@ export interface CreateUserData {
   department?: string;
   position?: string;
   password?: string; // optional: admin can set password directly
+  company_id?: string; // optional: super-admin can assign company when creating users
 }
 
 export interface UpdateUserData {
