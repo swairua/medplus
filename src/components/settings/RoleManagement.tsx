@@ -131,7 +131,7 @@ export function RoleManagement() {
 
       if (result.success) {
         setCreateDialogOpen(false);
-        setFormData({ name: '', description: '', permissions: [], company_id: profile?.company_id || '' });
+        setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
       } else {
         toast.error(result.error || 'Failed to create role');
       }
@@ -160,7 +160,7 @@ export function RoleManagement() {
       if (result.success) {
         setEditDialogOpen(false);
         setEditingRole(null);
-        setFormData({ name: '', description: '', permissions: [], company_id: profile?.company_id || '' });
+        setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
       } else {
         toast.error(result.error || 'Failed to update role');
       }
@@ -230,7 +230,7 @@ export function RoleManagement() {
           size="lg"
           onClick={() => {
             setEditingRole(null);
-            setFormData({ name: '', description: '', permissions: [], company_id: profile?.company_id || '' });
+            setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
             setCreateDialogOpen(true);
           }}
         >
@@ -346,7 +346,7 @@ export function RoleManagement() {
             setCreateDialogOpen(false);
             setEditDialogOpen(false);
             setEditingRole(null);
-            setFormData({ name: '', description: '', permissions: [], company_id: profile?.company_id || '' });
+            setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
           }
         }}
       >
@@ -478,7 +478,7 @@ export function RoleManagement() {
                 setCreateDialogOpen(false);
                 setEditDialogOpen(false);
                 setEditingRole(null);
-                setFormData({ name: '', description: '', permissions: [], company_id: profile?.company_id || '' });
+                setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
               }}
               disabled={submitting}
             >
