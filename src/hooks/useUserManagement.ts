@@ -442,6 +442,41 @@ export const useUserManagement = () => {
     }
   };
 
+  // Approve invitation (admin only)
+  const approveInvitation = async (invitationId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('user_invitations')
+        .update({
+          is_approved: true,
+          approved_by: currentUser?.id,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', invitationId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Invitation approved successfully');
+      await fetchInvitations();
+      return { success: true };
+    } catch (err) {
+      const errorMessage = parseErrorMessageWithCodes(err, 'invitation approval');
+      console.error('Error approving invitation:', err);
+      toast.error(`Failed to approve invitation: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Get user statistics
   const getUserStats = () => {
     const totalUsers = users.length;
