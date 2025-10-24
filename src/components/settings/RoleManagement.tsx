@@ -451,6 +451,7 @@ export function RoleManagement() {
 
           <DialogFooter>
             <Button
+              type="button"
               variant="outline"
               onClick={() => {
                 setCreateDialogOpen(false);
@@ -458,13 +459,23 @@ export function RoleManagement() {
                 setEditingRole(null);
                 setFormData({ name: '', description: '', permissions: [] });
               }}
+              disabled={submitting}
             >
               Cancel
             </Button>
             <Button
+              type="button"
               onClick={editingRole ? handleEditRole : handleCreateRole}
+              disabled={submitting || !formData.name.trim()}
             >
-              {editingRole ? 'Update Role' : 'Create Role'}
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {editingRole ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                editingRole ? 'Update Role' : 'Create Role'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
