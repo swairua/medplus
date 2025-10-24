@@ -59,6 +59,7 @@ export default function LPOs() {
   const currentCompany = companies?.[0];
   const { data: lpos, isLoading, error, refetch } = useLPOs(currentCompany?.id);
   const updateLPO = useUpdateLPO();
+  const deleteLPO = useDeleteLPO();
 
   // Note: Auto-migration removed - using manual migration guide instead
 
