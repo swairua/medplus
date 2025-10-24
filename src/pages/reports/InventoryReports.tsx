@@ -42,6 +42,7 @@ import {
   AreaChart
 } from 'recharts';
 import { useProducts, useStockMovements } from '@/hooks/useDatabase';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 
 // No sample data - using real database data only
