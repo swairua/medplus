@@ -24,21 +24,10 @@ CREATE TABLE companies (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- User roles enum
-CREATE TYPE user_role AS ENUM ('admin', 'manager', 'accountant', 'stock_manager', 'sales', 'viewer');
-
--- Users table
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    role user_role NOT NULL DEFAULT 'viewer',
-    is_active BOOLEAN DEFAULT TRUE,
-    last_login TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- User roles enum (unified across app)
+-- Note: This is defined in the profiles migration
+-- CREATE TYPE user_role AS ENUM ('admin', 'accountant', 'stock_manager', 'user');
+-- Users are now managed via the profiles table which extends Supabase auth.users
 
 -- Customers table
 CREATE TABLE customers (
