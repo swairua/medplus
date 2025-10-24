@@ -86,6 +86,7 @@ export function RoleManagement() {
   const [deletingRole, setDeletingRole] = useState<RoleDefinition | null>(null);
   const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
   const [selectedRoleForAudit, setSelectedRoleForAudit] = useState<RoleDefinition | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
