@@ -348,11 +348,17 @@ export const useConvertQuotationToInvoice = () => {
       
       return invoice;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
+      toast.success(`Quotation converted to invoice ${data.invoice_number} successfully!`);
+    },
+    onError: (error) => {
+      const errorMessage = parseErrorMessageWithCodes(error, 'convert quotation to invoice');
+      console.error('Error converting quotation to invoice:', errorMessage);
+      toast.error(`Error converting quotation to invoice: ${errorMessage}`);
     },
   });
 };
