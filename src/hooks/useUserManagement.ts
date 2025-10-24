@@ -76,8 +76,24 @@ export const useUserManagement = () => {
 
       setUsers(data || []);
     } catch (err) {
-      const errorMessage = parseErrorMessage(err);
       console.error('Error fetching users:', err);
+      let errorMessage = 'Unknown error occurred';
+      try {
+        errorMessage = parseErrorMessage(err);
+      } catch (parseErr) {
+        console.error('parseErrorMessage failed for fetchUsers:', parseErr);
+        errorMessage = err?.message || String(err);
+      }
+
+      // Ensure string and try JSON stringify for objects
+      if (typeof errorMessage !== 'string') {
+        try {
+          errorMessage = JSON.stringify(errorMessage);
+        } catch (jsonErr) {
+          errorMessage = String(errorMessage);
+        }
+      }
+
       setError(`Failed to fetch users: ${errorMessage}`);
       toast.error(`Error fetching users: ${errorMessage}`);
     } finally {
@@ -115,13 +131,17 @@ export const useUserManagement = () => {
       let errorMessage = 'Unknown error occurred';
       try {
         errorMessage = parseErrorMessage(err);
-        // Double-check that it's actually a string
-        if (typeof errorMessage !== 'string') {
+      } catch (parseErr) {
+        console.error('Error parsing error message for invitations:', parseErr);
+        errorMessage = err?.message || String(err) || 'Failed to parse error';
+      }
+
+      if (typeof errorMessage !== 'string') {
+        try {
+          errorMessage = JSON.stringify(errorMessage);
+        } catch (jsonErr) {
           errorMessage = String(errorMessage);
         }
-      } catch (parseErr) {
-        console.error('Error parsing error message:', parseErr);
-        errorMessage = err?.message || err?.toString() || 'Failed to parse error';
       }
 
       setError(`Failed to fetch invitations: ${errorMessage}`);
