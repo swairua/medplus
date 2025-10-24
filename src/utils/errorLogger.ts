@@ -42,7 +42,7 @@ export const extractErrorDetails = (error: unknown, context?: Record<string, any
  */
 export const logError = (label: string, error: unknown, context?: Record<string, any>) => {
   const errorDetails = extractErrorDetails(error, context);
-  console.error(label, errorDetails);
+  console.error(label, JSON.stringify(errorDetails, null, 2));
 };
 
 /**
