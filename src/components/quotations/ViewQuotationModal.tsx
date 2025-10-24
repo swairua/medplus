@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +11,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { 
-  FileText, 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  FileText,
   Calendar,
   User,
   Mail,
@@ -19,10 +29,12 @@ import {
   MapPin,
   Download,
   Edit,
-  Send
+  Send,
+  Trash2
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useCompanies } from '@/hooks/useDatabase';
+import { useDeleteQuotation } from '@/hooks/useQuotationItems';
 
 interface ViewQuotationModalProps {
   open: boolean;
@@ -31,6 +43,7 @@ interface ViewQuotationModalProps {
   onEdit: () => void;
   onDownload: () => void;
   onSend: () => void;
+  onDelete?: () => void;
 }
 
 export function ViewQuotationModal({
@@ -39,13 +52,28 @@ export function ViewQuotationModal({
   quotation,
   onEdit,
   onDownload,
-  onSend
+  onSend,
+  onDelete
 }: ViewQuotationModalProps) {
   if (!quotation) return null;
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deleteQuotation = useDeleteQuotation();
 
   // Get company data for logo
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteQuotation.mutateAsync(quotation.id);
+      setShowDeleteDialog(false);
+      onOpenChange(false);
+      onDelete?.();
+    } catch (error) {
+      console.error('Error deleting quotation:', error);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -82,6 +110,7 @@ export function ViewQuotationModal({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -106,6 +135,14 @@ export function ViewQuotationModal({
                     <Send className="h-4 w-4" />
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </DialogTitle>
@@ -371,5 +408,25 @@ export function ViewQuotationModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Quotation</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete quotation {quotation.quotation_number}? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogAction
+          onClick={handleDeleteConfirm}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          disabled={deleteQuotation.isPending}
+        >
+          {deleteQuotation.isPending ? 'Deleting...' : 'Delete'}
+        </AlertDialogAction>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

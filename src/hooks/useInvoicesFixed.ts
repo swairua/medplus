@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 /**
  * Fixed hook for fetching invoices with customer data
@@ -253,5 +254,32 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
     },
     enabled: !!customerId,
     staleTime: 30000,
+  });
+};
+
+// Delete an invoice
+export const useDeleteInvoice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoiceId);
+
+      if (error) {
+        console.error('Error deleting invoice:', error);
+        throw new Error(`Failed to delete invoice: ${error.message}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices_fixed'] });
+      toast.success('Invoice deleted successfully!');
+    },
+    onError: (error) => {
+      console.error('Error deleting invoice:', error);
+      toast.error(`Failed to delete invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    },
   });
 };

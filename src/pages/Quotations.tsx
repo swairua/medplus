@@ -22,11 +22,12 @@ import {
   Download,
   Calendar,
   Send,
-  Receipt
+  Receipt,
+  Trash2
 } from 'lucide-react';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { useConvertQuotationToProforma, useConvertQuotationToInvoice } from '@/hooks/useQuotationItems';
+import { useConvertQuotationToProforma, useConvertQuotationToInvoice, useDeleteQuotation } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
 import { CreateQuotationModal } from '@/components/quotations/CreateQuotationModal';
 import { ViewQuotationModal } from '@/components/quotations/ViewQuotationModal';
@@ -86,6 +87,7 @@ export default function Quotations() {
   const { data: quotations, isLoading, error, refetch } = useQuotations(currentCompany?.id);
   const convertToProforma = useConvertQuotationToProforma();
   const convertToInvoice = useConvertQuotationToInvoice();
+  const deleteQuotation = useDeleteQuotation();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -218,6 +220,16 @@ Website: www.biolegendscientific.co.ke`;
       refetch();
     } catch (error) {
       console.error('Error converting quotation to invoice:', error);
+    }
+  };
+
+  const handleDeleteQuotation = async (quotation: Quotation) => {
+    try {
+      await deleteQuotation.mutateAsync(quotation.id);
+      refetch();
+      setSelectedQuotation(null);
+    } catch (error) {
+      console.error('Error deleting quotation:', error);
     }
   };
 
@@ -419,6 +431,15 @@ Website: www.biolegendscientific.co.ke`;
                           >
                             <Download className="h-4 w-4" />
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteQuotation(quotation)}
+                            title="Delete quotation"
+                            className="text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
 
                         {/* Conditional Action Buttons */}
@@ -486,6 +507,7 @@ Website: www.biolegendscientific.co.ke`;
         onEdit={() => selectedQuotation && handleEditQuotation(selectedQuotation)}
         onDownload={() => selectedQuotation && handleDownloadQuotation(selectedQuotation)}
         onSend={() => selectedQuotation && handleSendQuotation(selectedQuotation)}
+        onDelete={() => selectedQuotation && handleDeleteQuotation(selectedQuotation)}
       />
 
       <EditQuotationModal

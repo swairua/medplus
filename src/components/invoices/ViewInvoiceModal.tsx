@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,10 +8,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
+import {
   Receipt,
   Calendar,
   User,
@@ -21,8 +31,10 @@ import {
   Download,
   Send,
   DollarSign,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react';
+import { useDeleteInvoice } from '@/hooks/useInvoicesFixed';
 
 interface ViewInvoiceModalProps {
   open: boolean;
@@ -32,18 +44,34 @@ interface ViewInvoiceModalProps {
   onDownload: () => void;
   onSend: () => void;
   onRecordPayment: () => void;
+  onDelete?: () => void;
 }
 
-export function ViewInvoiceModal({ 
-  open, 
-  onOpenChange, 
-  invoice, 
-  onEdit, 
-  onDownload, 
-  onSend, 
-  onRecordPayment 
+export function ViewInvoiceModal({
+  open,
+  onOpenChange,
+  invoice,
+  onEdit,
+  onDownload,
+  onSend,
+  onRecordPayment,
+  onDelete
 }: ViewInvoiceModalProps) {
   if (!invoice) return null;
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deleteInvoice = useDeleteInvoice();
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteInvoice.mutateAsync(invoice.id);
+      setShowDeleteDialog(false);
+      onOpenChange(false);
+      onDelete?.();
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -80,6 +108,7 @@ export function ViewInvoiceModal({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -308,11 +337,39 @@ export function ViewInvoiceModal({
         </Card>
 
         <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowDeleteDialog(true)}
+            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete invoice {invoice.invoice_number}? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogAction
+          onClick={handleDeleteConfirm}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          disabled={deleteInvoice.isPending}
+        >
+          {deleteInvoice.isPending ? 'Deleting...' : 'Delete'}
+        </AlertDialogAction>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

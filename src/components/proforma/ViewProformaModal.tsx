@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -8,18 +9,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { 
-  FileText, 
-  Download, 
-  Send, 
+import {
+  FileText,
+  Download,
+  Send,
   Calendar,
   User,
   Receipt,
-  DollarSign
+  DollarSign,
+  Trash2
 } from 'lucide-react';
+import { useDeleteProforma } from '@/hooks/useProforma';
 
 interface ProformaItem {
   id: string;
@@ -59,17 +71,33 @@ interface ViewProformaModalProps {
   onDownloadPDF?: (proforma: Proforma) => void;
   onSendEmail?: (proforma: Proforma) => void;
   onCreateInvoice?: (proforma: Proforma) => void;
+  onDelete?: () => void;
 }
 
-export const ViewProformaModal = ({ 
-  open, 
-  onOpenChange, 
+export const ViewProformaModal = ({
+  open,
+  onOpenChange,
   proforma,
   onDownloadPDF,
   onSendEmail,
-  onCreateInvoice
+  onCreateInvoice,
+  onDelete
 }: ViewProformaModalProps) => {
   if (!proforma) return null;
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deleteProforma = useDeleteProforma();
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteProforma.mutateAsync(proforma.id);
+      setShowDeleteDialog(false);
+      onOpenChange(false);
+      onDelete?.();
+    } catch (error) {
+      console.error('Error deleting proforma:', error);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -105,6 +133,7 @@ export const ViewProformaModal = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -289,6 +318,14 @@ export const ViewProformaModal = ({
                 Convert to Invoice
               </Button>
             )}
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(true)}
+              className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
@@ -296,5 +333,25 @@ export const ViewProformaModal = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Proforma Invoice</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete proforma invoice {proforma.proforma_number}? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogAction
+          onClick={handleDeleteConfirm}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          disabled={deleteProforma.isPending}
+        >
+          {deleteProforma.isPending ? 'Deleting...' : 'Delete'}
+        </AlertDialogAction>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };

@@ -24,9 +24,10 @@ import {
   Calendar,
   Receipt,
   FileText,
-  CheckCircle
+  CheckCircle,
+  Trash2
 } from 'lucide-react';
-import { useProformas, useConvertProformaToInvoice, type ProformaWithItems } from '@/hooks/useProforma';
+import { useProformas, useConvertProformaToInvoice, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
 import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
@@ -51,6 +52,7 @@ export default function Proforma() {
   // Use proper proforma hooks
   const { data: proformas = [], isLoading, refetch } = useProformas(currentCompany?.id);
   const convertToInvoice = useConvertProformaToInvoice();
+  const deleteProforma = useDeleteProforma();
 
   const filteredProformas = proformas.filter(proforma =>
     proforma.proforma_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,6 +149,16 @@ export default function Proforma() {
     // TODO: Implement accept proforma mutation
     toast.success(`Proforma ${proforma.proforma_number} marked as accepted`);
     refetch();
+  };
+
+  const handleDeleteProforma = async (proforma: ProformaWithItems) => {
+    try {
+      await deleteProforma.mutateAsync(proforma.id!);
+      refetch();
+      setSelectedProforma(null);
+    } catch (error) {
+      console.error('Error deleting proforma:', error);
+    }
   };
 
   const handleFilter = () => {
