@@ -74,15 +74,30 @@ interface ViewProformaModalProps {
   onDelete?: () => void;
 }
 
-export const ViewProformaModal = ({ 
-  open, 
-  onOpenChange, 
+export const ViewProformaModal = ({
+  open,
+  onOpenChange,
   proforma,
   onDownloadPDF,
   onSendEmail,
-  onCreateInvoice
+  onCreateInvoice,
+  onDelete
 }: ViewProformaModalProps) => {
   if (!proforma) return null;
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deleteProforma = useDeleteProforma();
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteProforma.mutateAsync(proforma.id);
+      setShowDeleteDialog(false);
+      onOpenChange(false);
+      onDelete?.();
+    } catch (error) {
+      console.error('Error deleting proforma:', error);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
