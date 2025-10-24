@@ -430,6 +430,7 @@ export default function Inventory() {
                           size="icon"
                           onClick={() => handleEditItem(item)}
                           title="Edit item"
+                          disabled={!canEditInventory('edit_inventory')}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -438,6 +439,7 @@ export default function Inventory() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleRestockItem(item)}
+                            disabled={!canManageInventory('manage_inventory')}
                             className="bg-warning-light text-warning border-warning/20 hover:bg-warning hover:text-warning-foreground ml-2"
                           >
                             <Package className="h-4 w-4 mr-1" />
