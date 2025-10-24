@@ -594,6 +594,17 @@ export default function Customers() {
         }}
         preSelectedCustomer={selectedCustomer}
       />
+
+      <DeleteCustomerModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        customer={selectedCustomer}
+        relatedRecordsCounts={deleteRelatedCounts}
+        isDeleting={deleteCustomer.isPending}
+        onConfirm={async (customerId) => {
+          await deleteCustomer.mutateAsync(customerId);
+        }}
+      />
     </div>
   );
 }
