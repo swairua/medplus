@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,10 +24,12 @@ import {
   CheckCircle,
   Clock,
   FileText,
-  Search
+  Search,
+  Lock
 } from 'lucide-react';
 import { useCustomers, usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 import { exportCustomerStatementsToCSV, exportCustomerStatementSummaryToCSV, exportCustomerStatementsToExcel } from '@/utils/csvExporter';
@@ -61,6 +63,14 @@ export default function CustomerStatements() {
   const { data: payments } = usePayments();
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
+
+  const { can: canViewReports, can: canExportReports, loading: permissionsLoading } = usePermissions();
+
+  useEffect(() => {
+    if (!permissionsLoading && !canViewReports('view_reports')) {
+      toast.error('You do not have permission to view reports');
+    }
+  }, [permissionsLoading, canViewReports]);
 
   // Calculate customer statements
   const calculateCustomerStatements = (): CustomerStatement[] => {
@@ -291,6 +301,11 @@ export default function CustomerStatements() {
   };
 
   const handleExportReport = () => {
+    if (!canExportReports('export_reports')) {
+      toast.error('You do not have permission to export reports');
+      return;
+    }
+
     try {
       const statementsToExport = selectedCustomers.length > 0
         ? filteredStatements.filter(s => selectedCustomers.includes(s.customer_id))
@@ -322,6 +337,42 @@ export default function CustomerStatements() {
     setShowPreview(true);
   };
 
+  if (permissionsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Checking permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canViewReports('view_reports')) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Customer Statements</h1>
+            <p className="text-muted-foreground">Generate and send statements showing outstanding balances</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center">
+                <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+                <p className="text-muted-foreground">You do not have permission to view customer statements.</p>
+                <p className="text-sm text-muted-foreground mt-2">Contact your administrator if you believe this is an error.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -332,7 +383,7 @@ export default function CustomerStatements() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" onClick={handleExportReport}>
+          <Button variant="outline" onClick={handleExportReport} disabled={!canExportReports('export_reports')}>
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>

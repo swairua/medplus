@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,16 +11,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  BarChart3, 
-  Download, 
-  Calendar, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  BarChart3,
+  Download,
+  Calendar,
+  TrendingUp,
+  TrendingDown,
   DollarSign,
   ShoppingCart,
   Users,
-  Package
+  Package,
+  Lock
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -40,9 +41,10 @@ import {
 import { useCustomers, useProducts } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import useUserManagement from '@/hooks/useUserManagement';
 import { toast } from 'sonner';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 export default function SalesReports() {
   const [dateRange, setDateRange] = useState('last_30_days');
@@ -53,6 +55,7 @@ export default function SalesReports() {
 
   const companyId = useCurrentCompanyId();
   const { users, fetchUsers } = useUserManagement();
+  const { can: canViewReports, can: canExportReports, loading: permissionsLoading } = usePermissions();
 
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(companyId);
   const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers(companyId);
@@ -72,6 +75,12 @@ export default function SalesReports() {
 
   const isLoading = invoicesLoading || customersLoading || productsLoading;
   const hasError = invoicesError || customersError || productsError;
+
+  useEffect(() => {
+    if (!permissionsLoading && !canViewReports('view_sales_reports')) {
+      toast.error('You do not have permission to view sales reports');
+    }
+  }, [permissionsLoading, canViewReports]);
 
   // Get filtered invoices based on date range and creator filter
   const getFilteredInvoices = () => {
@@ -274,6 +283,11 @@ export default function SalesReports() {
   };
 
   const handleExport = () => {
+    if (!canExportReports('export_reports')) {
+      toast.error('You do not have permission to export reports');
+      return;
+    }
+
     const filteredInvoices = getFilteredInvoices();
 
     // Build CSV
@@ -331,13 +345,38 @@ export default function SalesReports() {
   };
 
   // Handle loading and error states
-  if (isLoading) {
+  if (permissionsLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading sales reports...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!canViewReports('view_sales_reports')) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Sales Reports</h1>
+            <p className="text-muted-foreground">Analyze sales performance and trends</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center">
+                <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+                <p className="text-muted-foreground">You do not have permission to view sales reports.</p>
+                <p className="text-sm text-muted-foreground mt-2">Contact your administrator if you believe this is an error.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -406,7 +445,7 @@ export default function SalesReports() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} disabled={!canExportReports('export_reports')}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>

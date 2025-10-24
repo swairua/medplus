@@ -71,7 +71,7 @@ export function UserAuditLog({ limit = 50 }: UserAuditLogProps) {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [actionFilter, setActionFilter] = useState<string>('');
+  const [actionFilter, setActionFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchAuditLogs();
@@ -103,8 +103,10 @@ export function UserAuditLog({ limit = 50 }: UserAuditLogProps) {
 
       setLogs(data || []);
     } catch (err) {
-      console.error('Error fetching audit logs:', err);
-      toast.error('Failed to fetch audit logs');
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      console.error('Error fetching audit logs:', errorMessage);
+      console.error('Full error details:', err);
+      toast.error(`Failed to fetch audit logs: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -116,7 +118,7 @@ export function UserAuditLog({ limit = 50 }: UserAuditLogProps) {
       log.details?.invited_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.details?.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesAction = !actionFilter || log.action === actionFilter;
+    const matchesAction = actionFilter === 'all' || log.action === actionFilter;
 
     return matchesSearch && matchesAction;
   });
@@ -142,7 +144,7 @@ export function UserAuditLog({ limit = 50 }: UserAuditLogProps) {
               <SelectValue placeholder="Filter by action" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Actions</SelectItem>
+              <SelectItem value="all">All Actions</SelectItem>
               <SelectItem value="CREATE">User Creation</SelectItem>
               <SelectItem value="APPROVE">User Approval</SelectItem>
               <SelectItem value="INVITE">User Invitation</SelectItem>

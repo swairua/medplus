@@ -1,33 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AddInventoryItemModal } from '@/components/inventory/AddInventoryItemModal';
 import { EditInventoryItemModal } from '@/components/inventory/EditInventoryItemModal';
 import { ViewInventoryItemModal } from '@/components/inventory/ViewInventoryItemModal';
 import { RestockItemModal } from '@/components/inventory/RestockItemModal';
 import { StockAdjustmentModal } from '@/components/inventory/StockAdjustmentModal';
 import { useProducts, useCompanies } from '@/hooks/useDatabase';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Filter,
   Eye,
   Edit,
   Package,
   AlertTriangle,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Lock
 } from 'lucide-react';
 
 interface InventoryItem {
@@ -90,12 +92,27 @@ export default function Inventory() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: products, isLoading: loadingProducts, error: productsError } = useProducts(currentCompany?.id);
+  const { can: canCreateInventory, can: canEditInventory, can: canViewInventory, can: canManageInventory, loading: permissionsLoading } = usePermissions();
+
+  useEffect(() => {
+    if (!permissionsLoading && !canViewInventory('view_inventory')) {
+      toast.error('You do not have permission to view inventory');
+    }
+  }, [permissionsLoading, canViewInventory]);
 
   const handleAddItem = () => {
+    if (!canCreateInventory('create_inventory')) {
+      toast.error('You do not have permission to create inventory items');
+      return;
+    }
     setShowAddModal(true);
   };
 
   const handleStockAdjustment = (item?: InventoryItem) => {
+    if (!canManageInventory('manage_inventory')) {
+      toast.error('You do not have permission to adjust inventory');
+      return;
+    }
     if (item) {
       setSelectedItem(item);
       setShowAdjustmentModal(true);
@@ -110,11 +127,19 @@ export default function Inventory() {
   };
 
   const handleEditItem = (item: InventoryItem) => {
+    if (!canEditInventory('edit_inventory')) {
+      toast.error('You do not have permission to edit inventory items');
+      return;
+    }
     setSelectedItem(item);
     setShowEditModal(true);
   };
 
   const handleRestockItem = (item: InventoryItem) => {
+    if (!canManageInventory('manage_inventory')) {
+      toast.error('You do not have permission to restock items');
+      return;
+    }
     setSelectedItem(item);
     setShowRestockModal(true);
   };
@@ -197,6 +222,50 @@ export default function Inventory() {
     );
   }
 
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
+            <p className="text-muted-foreground">Checking permissions...</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canViewInventory('view_inventory')) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
+            <p className="text-muted-foreground">Manage stock levels and inventory items</p>
+          </div>
+        </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center">
+                <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+                <p className="text-muted-foreground">You do not have permission to view inventory.</p>
+                <p className="text-sm text-muted-foreground mt-2">Contact your administrator if you believe this is an error.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -208,11 +277,11 @@ export default function Inventory() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" onClick={handleStockAdjustment}>
+          <Button variant="outline" onClick={handleStockAdjustment} disabled={!canManageInventory('manage_inventory')}>
             <Package className="h-4 w-4 mr-2" />
             Stock Adjustment
           </Button>
-          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleAddItem}>
+          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleAddItem} disabled={!canCreateInventory('create_inventory')}>
             <Plus className="h-4 w-4 mr-2" />
             Add Item
           </Button>
@@ -361,6 +430,7 @@ export default function Inventory() {
                           size="icon"
                           onClick={() => handleEditItem(item)}
                           title="Edit item"
+                          disabled={!canEditInventory('edit_inventory')}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -369,6 +439,7 @@ export default function Inventory() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleRestockItem(item)}
+                            disabled={!canManageInventory('manage_inventory')}
                             className="bg-warning-light text-warning border-warning/20 hover:bg-warning hover:text-warning-foreground ml-2"
                           >
                             <Package className="h-4 w-4 mr-1" />
