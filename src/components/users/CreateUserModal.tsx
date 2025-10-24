@@ -24,7 +24,7 @@ import { CreateUserData } from '@/hooks/useUserManagement';
 interface CreateUserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateUser: (userData: CreateUserData) => Promise<{ success: boolean; error?: string }>;
+  onCreateUser: (userData: CreateUserData) => Promise<{ success: boolean; password?: string; error?: string }>;
   loading?: boolean;
 }
 
