@@ -212,6 +212,8 @@ export function RoleManagement() {
         </Button>
       </div>
 
+      <RoleAnalytics />
+
       <Card className="shadow-card">
         <CardContent className="pt-6">
           <Input
