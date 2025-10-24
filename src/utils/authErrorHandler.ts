@@ -46,6 +46,14 @@ export function analyzeAuthError(error: AuthError | Error): AuthErrorInfo {
     };
   }
 
+  if (message.includes('pending approval') || message.includes('not approved')) {
+    return {
+      type: 'not_approved',
+      message: 'Your account is pending admin approval',
+      action: 'Please contact your administrator to activate your account'
+    };
+  }
+
   if (message.includes('network') || message.includes('fetch')) {
     return {
       type: 'network_error',
