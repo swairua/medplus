@@ -444,6 +444,34 @@ export const useDeleteProforma = () => {
 
   return useMutation({
     mutationFn: async (proformaId: string) => {
+      // Snapshot for audit
+      let snapshot: any = null;
+      let companyId: string | null = null;
+      try {
+        const { data } = await supabase
+          .from('proforma_invoices')
+          .select(`*, proforma_items(*)`)
+          .eq('id', proformaId)
+          .single();
+        snapshot = data;
+        companyId = (data as any)?.company_id ?? null;
+      } catch {}
+
+      try {
+        const { logDeletion } = await import('@/utils/auditLogger');
+        await logDeletion('proforma', proformaId, snapshot, companyId);
+      } catch (e) {
+        console.warn('Proforma delete audit failed:', (e as any)?.message || e);
+      }
+
+      // Delete child items first (best-effort)
+      try {
+        await supabase.from('proforma_items').delete().eq('proforma_id', proformaId);
+      } catch (e) {
+        console.warn('Proforma items delete skipped/failed:', (e as any)?.message || e);
+      }
+
+      // Delete parent record
       const { error } = await supabase
         .from('proforma_invoices')
         .delete()
