@@ -26,9 +26,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Filter,
   Eye,
   Edit,
@@ -37,7 +37,8 @@ import {
   FileText,
   DollarSign,
   Building2,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react';
 import { useCustomers, useCreateCustomer, useCompanies, useCustomerInvoices, useCustomerPayments } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
