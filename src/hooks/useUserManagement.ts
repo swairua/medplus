@@ -524,6 +524,7 @@ export const useUserManagement = () => {
     deleteUser,
     inviteUser,
     revokeInvitation,
+    approveInvitation,
     acceptInvitation,
     getUserStats,
     promoteAllToAdmin,
