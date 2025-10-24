@@ -579,7 +579,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Compute derived state
   const isAuthenticated = !!user;
-  const isAdmin = profile?.role === 'admin';
+  // Treat any role containing 'admin' (case-insensitive) as administrator (covers 'admin', 'super_admin', etc.)
+  const isAdmin = typeof profile?.role === 'string' && profile.role.toLowerCase().includes('admin');
 
   const value: AuthContextType = {
     user,
