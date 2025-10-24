@@ -93,6 +93,7 @@ export function RoleManagement() {
     name: '',
     description: '',
     permissions: [] as Permission[],
+    company_id: profile?.company_id || '',
   });
 
   if (!isAdmin) {
