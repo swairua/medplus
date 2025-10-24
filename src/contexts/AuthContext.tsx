@@ -169,18 +169,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userProfile = await fetchProfile(newSession.user.id);
         
         if (mountedRef.current) {
-          setSession(newSession);
-          setUser(newSession.user);
-          setProfile(userProfile);
-          
-          // Update last login for sign-in events, but don't await to prevent blocking
-          if (event === 'SIGNED_IN' && userProfile) {
-            updateLastLogin(newSession.user.id).catch(err =>
-              logError('Sign-in last login update failed:', err, {
-                userId: newSession.user.id,
-                context: 'handleAuthStateChange'
-              })
-            );
+          // If profile exists but is not active, immediately sign out and block access
+          if (userProfile && userProfile.status && userProfile.status !== 'active') {
+            setTimeout(() => toast.error('Your account is pending approval. Please contact an administrator.'), 0);
+            try { await supabase.auth.signOut(); } catch {}
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+          } else {
+            setSession(newSession);
+            setUser(newSession.user);
+            setProfile(userProfile);
+
+            // Update last login for sign-in events, but don't await to prevent blocking
+            if (event === 'SIGNED_IN' && userProfile) {
+              updateLastLogin(newSession.user.id).catch(err =>
+                logError('Sign-in last login update failed:', err, {
+                  userId: newSession.user.id,
+                  context: 'handleAuthStateChange'
+                })
+              );
+            }
           }
         }
       } else {
