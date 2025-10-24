@@ -76,6 +76,12 @@ export default function SalesReports() {
   const isLoading = invoicesLoading || customersLoading || productsLoading;
   const hasError = invoicesError || customersError || productsError;
 
+  useEffect(() => {
+    if (!permissionsLoading && !canViewReports('view_sales_reports')) {
+      toast.error('You do not have permission to view sales reports');
+    }
+  }, [permissionsLoading, canViewReports]);
+
   // Get filtered invoices based on date range and creator filter
   const getFilteredInvoices = () => {
     if (!invoices) return [];
