@@ -52,6 +52,7 @@ export default function SalesReports() {
   const [creatorFilter, setCreatorFilter] = useState<string | null>(null);
 
   const companyId = useCurrentCompanyId();
+  const { users, fetchUsers } = useUserManagement();
 
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(companyId);
   const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers(companyId);
