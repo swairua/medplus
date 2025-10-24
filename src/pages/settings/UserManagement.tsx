@@ -42,6 +42,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth, UserProfile } from '@/contexts/AuthContext';
 import useUserManagement from '@/hooks/useUserManagement';
 import { CreateUserModal } from '@/components/users/CreateUserModal';
@@ -50,7 +51,6 @@ import { InviteUserModal } from '@/components/users/InviteUserModal';
 import { UserAuditLog } from '@/components/users/UserAuditLog';
 import { RoleManagement } from '@/components/settings/RoleManagement';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function getRoleColor(role: string) {
   switch (role) {
@@ -186,389 +186,400 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">User Management</h1>
-          <p className="text-muted-foreground">
-            Manage user accounts, roles, and permissions
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => setModalState({ type: 'invite' })}
-          >
-            <Mail className="h-4 w-4 mr-2" />
-            Invite User
-          </Button>
-          <Button
-            variant="primary-gradient"
-            size="lg"
-            onClick={() => setModalState({ type: 'create' })}
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={async () => {
-              // Confirm destructive action
-              const ok = window.confirm('Are you sure you want to promote all existing users to admin? This cannot be easily undone.');
-              if (!ok) return;
-              const res = await promoteAllToAdmin();
-              if (res.success) {
-                toast.success(`Promoted ${res.count || 0} users to admin`);
-              } else {
-                toast.error(res.error || 'Failed to promote users');
-              }
-            }}
-          >
-            Promote all to Admin
-          </Button>
-        </div>
-      </div>
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="users">Users & Invitations</TabsTrigger>
+          <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
+        </TabsList>
 
-
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="shadow-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold text-primary">{stats.totalUsers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <UserCheck className="h-5 w-5 text-success" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Users</p>
-                <p className="text-2xl font-bold text-success">{stats.activeUsers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Shield className="h-5 w-5 text-destructive" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Administrators</p>
-                <p className="text-2xl font-bold text-destructive">{stats.adminUsers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-warning" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Pending Invites</p>
-                <p className="text-2xl font-bold text-warning">{stats.pendingInvitations}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search */}
-      <Card className="shadow-card">
-        <CardContent className="pt-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Users Table */}
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle>Users & Roles</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-                <p className="text-muted-foreground">Loading users...</p>
-              </div>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary text-primary-foreground font-medium">
-                            {user.full_name ? getInitials(user.full_name) : 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.full_name || 'No name'}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {user.position || 'No position'}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getRoleColor(user.role)}>
-                        {user.role.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getStatusColor(user.status)}>
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-muted-foreground">
-                        {user.department || '-'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {user.last_login ? (
-                        new Date(user.last_login).toLocaleDateString()
-                      ) : (
-                        <span className="text-muted-foreground">Never</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => setModalState({ type: 'edit', user })}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit User
-                          </DropdownMenuItem>
-                          {user.id !== currentUser?.id && (
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => setDeleteDialog({ open: true, user })}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete User
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      <UserX className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-muted-foreground">No users found</p>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pending Invitations */}
-      {invitations.length > 0 && (
-        <Card className="shadow-card">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle>Pending Invitations</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Review and approve user invitations before they can create accounts
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
-              <p className="text-sm text-blue-900 dark:text-blue-100">
-                <strong>User Approval Process:</strong> New user invitations require manual approval from an administrator before users can create their accounts. This ensures proper user management and security compliance.
+        <TabsContent value="users" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">User Management</h1>
+              <p className="text-muted-foreground">
+                Manage user accounts, roles, and permissions
               </p>
             </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setModalState({ type: 'invite' })}
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Invite User
+              </Button>
+              <Button
+                variant="primary-gradient"
+                size="lg"
+                onClick={() => setModalState({ type: 'create' })}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={async () => {
+                  const ok = window.confirm('Are you sure you want to promote all existing users to admin? This cannot be easily undone.');
+                  if (!ok) return;
+                  const res = await promoteAllToAdmin();
+                  if (res.success) {
+                    toast.success(`Promoted ${res.count || 0} users to admin`);
+                  } else {
+                    toast.error(res.error || 'Failed to promote users');
+                  }
+                }}
+              >
+                Promote all to Admin
+              </Button>
+            </div>
+          </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Invited</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Approval Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invitations.map((invitation) => (
-                  <TableRow key={invitation.id}>
-                    <TableCell>{invitation.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getRoleColor(invitation.role)}>
-                        {invitation.role.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(invitation.invited_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(invitation.expires_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getStatusColor(invitation.status)}>
-                        {invitation.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {invitation.is_approved ? (
-                          <div className="flex items-center space-x-2">
-                            <Badge variant="outline" className="bg-success-light text-success border-success/20">
-                              <UserCheck className="h-3 w-3 mr-1" />
-                              Approved
-                            </Badge>
+          {/* Summary Cards */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card className="shadow-card">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                    <p className="text-2xl font-bold text-primary">{stats.totalUsers}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-card">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <UserCheck className="h-5 w-5 text-success" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Active Users</p>
+                    <p className="text-2xl font-bold text-success">{stats.activeUsers}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-card">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <Shield className="h-5 w-5 text-destructive" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Administrators</p>
+                    <p className="text-2xl font-bold text-destructive">{stats.adminUsers}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-card">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-5 w-5 text-warning" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Pending Invites</p>
+                    <p className="text-2xl font-bold text-warning">{stats.pendingInvitations}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Search */}
+          <Card className="shadow-card">
+            <CardContent className="pt-6">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Users Table */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Users & Roles</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading users...</p>
+                  </div>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Last Login</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-primary text-primary-foreground font-medium">
+                                {user.full_name ? getInitials(user.full_name) : 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{user.full_name || 'No name'}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {user.position || 'No position'}
+                              </p>
+                            </div>
                           </div>
-                        ) : (
-                          <Badge variant="outline" className="bg-warning-light text-warning border-warning/20">
-                            <Clock className="h-3 w-3 mr-1" />
-                            Pending Approval
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getRoleColor(user.role)}>
+                            {user.role.replace('_', ' ')}
                           </Badge>
-                        )}
-                        {invitation.approved_at && (
-                          <p className="text-xs text-muted-foreground">
-                            Approved on {new Date(invitation.approved_at).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {invitation.status === 'pending' && !invitation.is_approved && (
-                        <div className="flex items-center justify-end space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleApproveInvitation(invitation.id)}
-                            className="text-success hover:text-success"
-                          >
-                            <UserCheck className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRevokeInvitation(invitation.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <UserX className="h-4 w-4 mr-2" />
-                            Revoke
-                          </Button>
-                        </div>
-                      )}
-                      {invitation.status === 'pending' && invitation.is_approved && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRevokeInvitation(invitation.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <UserX className="h-4 w-4 mr-2" />
-                          Revoke
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getStatusColor(user.status)}>
+                            {user.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-muted-foreground">
+                            {user.department || '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {user.last_login ? (
+                            new Date(user.last_login).toLocaleDateString()
+                          ) : (
+                            <span className="text-muted-foreground">Never</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => setModalState({ type: 'edit', user })}
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit User
+                              </DropdownMenuItem>
+                              {user.id !== currentUser?.id && (
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => setDeleteDialog({ open: true, user })}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete User
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredUsers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <UserX className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-muted-foreground">No users found</p>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
 
-      {/* User Audit Log */}
-      <UserAuditLog />
+          {/* Pending Invitations */}
+          {invitations.length > 0 && (
+            <Card className="shadow-card">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle>Pending Invitations</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Review and approve user invitations before they can create accounts
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    <strong>User Approval Process:</strong> New user invitations require manual approval from an administrator before users can create their accounts. This ensures proper user management and security compliance.
+                  </p>
+                </div>
 
-      {/* Modals */}
-      <CreateUserModal
-        open={modalState.type === 'create'}
-        onOpenChange={(open) => !open && setModalState({ type: null })}
-        onCreateUser={handleCreateUser}
-        loading={loading}
-      />
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Invited</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Approval Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invitations.map((invitation) => (
+                      <TableRow key={invitation.id}>
+                        <TableCell>{invitation.email}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getRoleColor(invitation.role)}>
+                            {invitation.role.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(invitation.invited_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(invitation.expires_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getStatusColor(invitation.status)}>
+                            {invitation.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {invitation.is_approved ? (
+                              <div className="flex items-center space-x-2">
+                                <Badge variant="outline" className="bg-success-light text-success border-success/20">
+                                  <UserCheck className="h-3 w-3 mr-1" />
+                                  Approved
+                                </Badge>
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="bg-warning-light text-warning border-warning/20">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Pending Approval
+                              </Badge>
+                            )}
+                            {invitation.approved_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Approved on {new Date(invitation.approved_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {invitation.status === 'pending' && !invitation.is_approved && (
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleApproveInvitation(invitation.id)}
+                                className="text-success hover:text-success"
+                              >
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRevokeInvitation(invitation.id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
+                                Revoke
+                              </Button>
+                            </div>
+                          )}
+                          {invitation.status === 'pending' && invitation.is_approved && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRevokeInvitation(invitation.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <UserX className="h-4 w-4 mr-2" />
+                              Revoke
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
 
-      <EditUserModal
-        open={modalState.type === 'edit'}
-        onOpenChange={(open) => !open && setModalState({ type: null })}
-        user={modalState.user}
-        onUpdateUser={handleUpdateUser}
-        loading={loading}
-      />
+          {/* User Audit Log */}
+          <UserAuditLog />
 
-      <InviteUserModal
-        open={modalState.type === 'invite'}
-        onOpenChange={(open) => !open && setModalState({ type: null })}
-        onInviteUser={handleInviteUser}
-        loading={loading}
-      />
+          {/* Modals */}
+          <CreateUserModal
+            open={modalState.type === 'create'}
+            onOpenChange={(open) => !open && setModalState({ type: null })}
+            onCreateUser={handleCreateUser}
+            loading={loading}
+          />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, user: deleteDialog.user })}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {deleteDialog.user?.full_name || deleteDialog.user?.email}? 
-              This action cannot be undone and will permanently remove the user's access to the system.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteUser}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete User
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          <EditUserModal
+            open={modalState.type === 'edit'}
+            onOpenChange={(open) => !open && setModalState({ type: null })}
+            user={modalState.user}
+            onUpdateUser={handleUpdateUser}
+            loading={loading}
+          />
+
+          <InviteUserModal
+            open={modalState.type === 'invite'}
+            onOpenChange={(open) => !open && setModalState({ type: null })}
+            onInviteUser={handleInviteUser}
+            loading={loading}
+          />
+
+          {/* Delete Confirmation Dialog */}
+          <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, user: deleteDialog.user })}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete User</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete {deleteDialog.user?.full_name || deleteDialog.user?.email}? 
+                  This action cannot be undone and will permanently remove the user's access to the system.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteUser}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete User
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </TabsContent>
+
+        <TabsContent value="roles" className="space-y-6">
+          <RoleManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
