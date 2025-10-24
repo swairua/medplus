@@ -556,26 +556,154 @@ export const useConvertProformaToInvoice = () => {
 
   return useMutation({
     mutationFn: async (proformaId: string) => {
-      // This would implement the conversion logic
-      // For now, just mark the proforma as converted
-      const { data, error } = await supabase
+      // Get proforma data with items
+      const { data: proforma, error: proformaError } = await supabase
         .from('proforma_invoices')
-        .update({ status: 'converted' })
+        .select(`
+          *,
+          proforma_items(*)
+        `)
         .eq('id', proformaId)
+        .single();
+
+      if (proformaError) throw proformaError;
+
+      // Generate invoice number
+      const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number', {
+        company_uuid: proforma.company_id
+      });
+
+      // Get current user
+      let createdBy: string | null = null;
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        createdBy = userData?.user?.id || null;
+      } catch {
+        createdBy = null;
+      }
+
+      // Create invoice from proforma
+      const invoiceData = {
+        company_id: proforma.company_id,
+        customer_id: proforma.customer_id,
+        invoice_number: invoiceNumber,
+        invoice_date: new Date().toISOString().split('T')[0],
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: 'sent',
+        subtotal: proforma.subtotal,
+        tax_amount: proforma.tax_amount,
+        total_amount: proforma.total_amount,
+        notes: `Converted from proforma invoice ${proforma.proforma_number}`,
+        terms_and_conditions: proforma.terms_and_conditions,
+        affects_inventory: true,
+        created_by: createdBy
+      };
+
+      let { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .insert([invoiceData])
         .select()
         .single();
 
-      if (error) {
-        console.error('Error converting proforma to invoice:', error);
-        throw error;
+      // Fallback: if FK violation on created_by, retry with created_by = null
+      if (invoiceError && invoiceError.code === '23503' && String(invoiceError.message || '').includes('created_by')) {
+        const retryPayload = { ...invoiceData, created_by: null };
+        const retryRes = await supabase
+          .from('invoices')
+          .insert([retryPayload])
+          .select()
+          .single();
+        invoice = retryRes.data;
+        invoiceError = retryRes.error as any;
       }
 
-      return data;
+      if (invoiceError) throw invoiceError;
+
+      // Create invoice items from proforma items
+      if (proforma.proforma_items && proforma.proforma_items.length > 0) {
+        const invoiceItems = proforma.proforma_items.map((item: any) => ({
+          invoice_id: invoice.id,
+          product_id: item.product_id,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_percentage: item.discount_percentage,
+          discount_before_vat: 0,
+          tax_percentage: item.tax_percentage,
+          tax_amount: item.tax_amount,
+          tax_inclusive: item.tax_inclusive,
+          line_total: item.line_total,
+          sort_order: item.sort_order || 1
+        }));
+
+        let { error: itemsError } = await supabase
+          .from('invoice_items')
+          .insert(invoiceItems);
+
+        // Fallback: remove discount_before_vat if schema doesn't have it
+        if (itemsError && (itemsError.code === 'PGRST204' || String(itemsError.message || '').toLowerCase().includes('discount_before_vat'))) {
+          const minimalItems = invoiceItems.map(({ discount_before_vat, ...rest }) => rest);
+          const retry = await supabase
+            .from('invoice_items')
+            .insert(minimalItems);
+          itemsError = retry.error as any;
+        }
+
+        if (itemsError) throw itemsError;
+
+        // Create stock movements
+        const stockMovements = invoiceItems
+          .filter(item => item.product_id && item.quantity > 0)
+          .map(item => ({
+            company_id: invoice.company_id,
+            product_id: item.product_id,
+            movement_type: 'OUT' as const,
+            reference_type: 'INVOICE' as const,
+            reference_id: invoice.id,
+            quantity: -item.quantity,
+            cost_per_unit: item.unit_price,
+            notes: `Stock reduction for invoice ${invoice.invoice_number} (converted from proforma ${proforma.proforma_number})`
+          }));
+
+        if (stockMovements.length > 0) {
+          await supabase.from('stock_movements').insert(stockMovements);
+
+          // Update product stock quantities
+          const stockUpdatePromises = stockMovements.map(movement =>
+            supabase.rpc('update_product_stock', {
+              product_uuid: movement.product_id,
+              movement_type: movement.movement_type,
+              quantity: Math.abs(movement.quantity)
+            })
+          );
+
+          const stockUpdateResults = await Promise.allSettled(stockUpdatePromises);
+
+          // Log any failed stock updates
+          stockUpdateResults.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              console.error(`Failed to update stock for product: ${stockMovements[index].product_id}`, result.reason);
+            } else if (result.value && result.value.error) {
+              console.error(`Stock update error for product: ${stockMovements[index].product_id}`, result.value.error);
+            }
+          });
+        }
+      }
+
+      // Update proforma status to converted
+      await supabase
+        .from('proforma_invoices')
+        .update({ status: 'converted' })
+        .eq('id', proformaId);
+
+      return invoice;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['proforma_invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['proforma_invoice', data.id] });
-      toast.success(`Proforma invoice ${data.proforma_number} converted to invoice!`);
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
+      toast.success(`Proforma invoice converted to invoice ${data.invoice_number}!`);
     },
     onError: (error) => {
       const errorMessage = serializeError(error);
