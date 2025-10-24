@@ -311,7 +311,7 @@ CREATE TABLE stock_movements (
     reference_number VARCHAR(255),
     movement_date DATE NOT NULL,
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
