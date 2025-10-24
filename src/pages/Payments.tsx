@@ -84,15 +84,25 @@ export default function Payments() {
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
-  
+
   // Fetch live payments data and company details
   const { data: companies = [] } = useCompanies();
   const currentCompany = companies[0];
   const { data: payments = [], isLoading, error } = usePayments(currentCompany?.id);
   const { data: invoices = [] } = useInvoices(currentCompany?.id);
+  const { can: canCreatePayment, can: canViewPayment, can: canEditPayment, can: canDeletePayment, loading: permissionsLoading } = usePermissions();
 
+  useEffect(() => {
+    if (!permissionsLoading && !canViewPayment('view_payment')) {
+      toast.error('You do not have permission to view payments');
+    }
+  }, [permissionsLoading, canViewPayment]);
 
   const handleRecordPayment = () => {
+    if (!canCreatePayment('create_payment')) {
+      toast.error('You do not have permission to record payments');
+      return;
+    }
     setShowRecordModal(true);
   };
 
