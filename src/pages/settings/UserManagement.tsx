@@ -98,6 +98,7 @@ export default function UserManagement() {
     inviteUser,
     revokeInvitation,
     approveInvitation,
+    resetUserPassword,
     getUserStats,
     promoteAllToAdmin,
   } = useUserManagement();
