@@ -497,6 +497,30 @@ export const useUserManagement = () => {
         throw error;
       }
 
+      // If a profile already exists for this email (user already signed up), activate it and assign role/company
+      try {
+        if (invitationData?.email) {
+          const { data: profileExists } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', invitationData.email)
+            .maybeSingle();
+
+          if (profileExists?.id) {
+            await supabase
+              .from('profiles')
+              .update({
+                status: 'active',
+                role: invitationData.role,
+                company_id: invitationData.company_id
+              })
+              .eq('id', profileExists.id);
+          }
+        }
+      } catch (profileActivateErr) {
+        console.warn('Could not auto-activate existing profile on approval:', profileActivateErr);
+      }
+
       // Log approval in audit trail
       try {
         if (invitationData) {
@@ -504,11 +528,11 @@ export const useUserManagement = () => {
         }
       } catch (auditError) {
         console.error('Failed to log approval to audit trail:', auditError);
-        // Don't fail the operation if audit logging fails
       }
 
       toast.success('Invitation approved successfully');
       await fetchInvitations();
+      await fetchUsers();
       return { success: true };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'invitation approval');
