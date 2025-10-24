@@ -44,6 +44,7 @@ interface ViewInvoiceModalProps {
   onDownload: () => void;
   onSend: () => void;
   onRecordPayment: () => void;
+  onDelete?: () => void;
 }
 
 export function ViewInvoiceModal({ 
