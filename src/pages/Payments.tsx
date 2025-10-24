@@ -247,7 +247,7 @@ export default function Payments() {
             Track and manage customer payments (All amounts in KES)
           </p>
         </div>
-        <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleRecordPayment}>
+        <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleRecordPayment} disabled={!canCreatePayment('create_payment')}>
           <Plus className="h-4 w-4 mr-2" />
           Record Payment
         </Button>
