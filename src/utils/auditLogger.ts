@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { executeSQL } from '@/utils/execSQL';
 
-export type AuditedEntity = 'quotation' | 'proforma' | 'invoice' | 'credit_note' | 'user_invitation' | 'user_creation';
+export type AuditedEntity = 'quotation' | 'proforma' | 'invoice' | 'credit_note' | 'user_invitation' | 'user_creation' | 'role' | 'permission';
 
 interface AuditLogEntry {
   action: 'DELETE' | 'CREATE' | 'APPROVE' | 'INVITE';
