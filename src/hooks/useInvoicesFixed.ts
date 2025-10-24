@@ -257,12 +257,40 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
   });
 };
 
-// Delete an invoice
+// Delete an invoice (audited, cleans up items)
 export const useDeleteInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (invoiceId: string) => {
+      // Snapshot for audit
+      let snapshot: any = null;
+      let companyId: string | null = null;
+      try {
+        const { data } = await supabase
+          .from('invoices')
+          .select(`*, invoice_items(*)`)
+          .eq('id', invoiceId)
+          .single();
+        snapshot = data;
+        companyId = (data as any)?.company_id ?? null;
+      } catch {}
+
+      try {
+        const { logDeletion } = await import('@/utils/auditLogger');
+        await logDeletion('invoice', invoiceId, snapshot, companyId);
+      } catch (e) {
+        console.warn('Invoice delete audit failed:', (e as any)?.message || e);
+      }
+
+      // Delete child items first (best-effort)
+      try {
+        await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
+      } catch (e) {
+        console.warn('Invoice items delete skipped/failed:', (e as any)?.message || e);
+      }
+
+      // Delete parent record
       const { error } = await supabase
         .from('invoices')
         .delete()

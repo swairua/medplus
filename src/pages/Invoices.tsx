@@ -36,10 +36,11 @@ import {
   Send,
   Calendar,
   Receipt,
-  Truck
+  Truck,
+  Trash2
 } from 'lucide-react';
 import { useCompanies } from '@/hooks/useDatabase';
-import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
+import { useInvoicesFixed as useInvoices, useDeleteInvoice } from '@/hooks/useInvoicesFixed';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
@@ -105,6 +106,8 @@ export default function Invoices() {
   
   // Use the fixed invoices hook
   const { data: invoices, isLoading, error, refetch } = useInvoices(currentCompany?.id);
+  const deleteInvoice = useDeleteInvoice();
+
 
   // Filter and search logic
   const filteredInvoices = invoices?.filter(invoice => {
@@ -589,8 +592,8 @@ Website: www.biolegendscientific.co.ke`;
                         {invoice.status !== 'paid' && (
                           <>
                             {invoice.status === 'draft' && (
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => handleSendInvoice(invoice.id)}
                                 className="bg-primary-light text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground"
@@ -608,6 +611,43 @@ Website: www.biolegendscientific.co.ke`;
                               <DollarSign className="h-4 w-4 mr-1" />
                               {(invoice.balance_due || 0) > 0 ? 'Record Payment' : 'Payment Adjustment'}
                             </Button>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Delete invoice"
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-48">
+                                <div className="text-sm mb-2">Delete invoice {invoice.invoice_number}?</div>
+                                <div className="flex justify-end space-x-2">
+                                  <Button variant="ghost" size="sm" onClick={() => {}}>
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={async () => {
+                                      try {
+                                        await deleteInvoice.mutateAsync(invoice.id);
+                                        refetch();
+                                        setSelectedInvoice(null);
+                                        toast.success('Invoice deleted');
+                                      } catch (e) {
+                                        console.error('Delete failed:', e);
+                                        toast.error('Failed to delete invoice');
+                                      }
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </>
                         )}
                       </div>
@@ -642,6 +682,7 @@ Website: www.biolegendscientific.co.ke`;
           onRecordPayment={() => handleRecordPayment(selectedInvoice.id)}
         />
       )}
+
 
       {/* Edit Invoice Modal */}
       {selectedInvoice && (

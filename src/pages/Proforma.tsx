@@ -37,6 +37,7 @@ import { ProformaSetupBanner } from '@/components/proforma/ProformaSetupBanner';
 import { downloadInvoicePDF, downloadQuotationPDF } from '@/utils/pdfGenerator';
 import { formatCurrency } from '@/utils/taxCalculation';
 import { ensureProformaSchema } from '@/utils/proformaDatabaseSetup';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function Proforma() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -44,6 +45,7 @@ export default function Proforma() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
 
   // Get company data
   const { data: companies } = useCompanies();
@@ -417,6 +419,37 @@ export default function Proforma() {
                             <Receipt className="h-4 w-4" />
                           </Button>
                         )}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" title="Delete proforma" className="text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-48">
+                            <div className="text-sm mb-2">Delete proforma {proforma.proforma_number}?</div>
+                            <div className="flex justify-end space-x-2">
+                              <Button variant="ghost" size="sm" onClick={() => {}}>
+                                Cancel
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    await deleteProforma.mutateAsync(proforma.id!);
+                                    refetch();
+                                    toast.success('Proforma deleted');
+                                  } catch (e) {
+                                    console.error('Delete failed:', e);
+                                    toast.error('Failed to delete proforma');
+                                  }
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -451,6 +484,7 @@ export default function Proforma() {
         onSendEmail={handleSendEmail}
         onCreateInvoice={handleCreateInvoice}
       />
+
     </div>
   );
 }

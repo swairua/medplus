@@ -1001,12 +1001,43 @@ export const useConvertQuotationToProforma = () => {
   });
 };
 
-// Delete a quotation
+// Delete a quotation (audited, cleans up items)
 export const useDeleteQuotation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (quotationId: string) => {
+      // Fetch snapshot for audit
+      let snapshot: any = null;
+      let companyId: string | null = null;
+      try {
+        const { data, error } = await supabase
+          .from('quotations')
+          .select(`*, quotation_items(*)`)
+          .eq('id', quotationId)
+          .single();
+        if (!error) {
+          snapshot = data;
+          companyId = (data as any)?.company_id ?? null;
+        }
+      } catch {}
+
+      // Attempt to log deletion (best-effort)
+      try {
+        const { logDeletion } = await import('@/utils/auditLogger');
+        await logDeletion('quotation', quotationId, snapshot, companyId);
+      } catch (e) {
+        console.warn('Quotation delete audit failed:', (e as any)?.message || e);
+      }
+
+      // Attempt to delete child items first (best-effort)
+      try {
+        await supabase.from('quotation_items').delete().eq('quotation_id', quotationId);
+      } catch (e) {
+        console.warn('Quotation items delete skipped/failed:', (e as any)?.message || e);
+      }
+
+      // Delete parent record
       const { error } = await supabase
         .from('quotations')
         .delete()
