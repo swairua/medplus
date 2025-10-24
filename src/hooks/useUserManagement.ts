@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth, UserProfile, UserRole, UserStatus } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseErrorMessage, parseErrorMessageWithCodes } from '@/utils/errorHelpers';
+import { logUserCreation, logUserApproval } from '@/utils/auditLogger';
 
 export interface UserInvitation {
   id: string;
