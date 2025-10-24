@@ -46,7 +46,7 @@ export const useUserManagement = () => {
 
   // Fetch all users in the same company
   const fetchUsers = async () => {
-    if (!currentUser?.company_id || !isAdmin) {
+    if (!isAdmin) {
       return;
     }
 
@@ -54,11 +54,17 @@ export const useUserManagement = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from('profiles')
         .select('*')
-        .eq('company_id', currentUser.company_id)
         .order('created_at', { ascending: false });
+
+      // If admin belongs to a company, limit to that company. Super-admins without company can fetch all users.
+      if (currentUser?.company_id) {
+        query.eq('company_id', currentUser.company_id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
