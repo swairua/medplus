@@ -76,11 +76,6 @@ export function CreateUserModal({
       if (error) throw error;
 
       setRoles(data || []);
-
-      // Set default role to first role found, or 'user' if none found
-      if (data && data.length > 0 && !formData.role) {
-        setFormData(prev => ({ ...prev, role: data[0].name as UserRole }));
-      }
     } catch (err) {
       console.error('Error fetching roles:', err);
       toast.error('Failed to load roles');
