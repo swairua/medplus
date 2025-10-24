@@ -403,7 +403,7 @@ export const useUserManagement = () => {
       const { data, error } = await supabase
         .from('profiles')
         .update({ role: 'admin' })
-        .neq('role', 'admin');
+        .or('role.is.null,role.neq.admin');
 
       if (error) {
         throw error;
