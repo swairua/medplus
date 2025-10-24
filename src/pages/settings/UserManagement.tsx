@@ -47,6 +47,7 @@ import useUserManagement from '@/hooks/useUserManagement';
 import { CreateUserModal } from '@/components/users/CreateUserModal';
 import { EditUserModal } from '@/components/users/EditUserModal';
 import { InviteUserModal } from '@/components/users/InviteUserModal';
+import { UserAuditLog } from '@/components/users/UserAuditLog';
 import { toast } from 'sonner';
 
 function getRoleColor(role: string) {
