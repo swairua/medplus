@@ -128,6 +128,8 @@ export function RoleManagement() {
       if (result.success) {
         setCreateDialogOpen(false);
         setFormData({ name: '', description: '', permissions: [] });
+      } else {
+        toast.error(result.error || 'Failed to create role');
       }
     } catch (error) {
       console.error('Error creating role:', error);
@@ -155,6 +157,8 @@ export function RoleManagement() {
         setEditDialogOpen(false);
         setEditingRole(null);
         setFormData({ name: '', description: '', permissions: [] });
+      } else {
+        toast.error(result.error || 'Failed to update role');
       }
     } catch (error) {
       console.error('Error updating role:', error);
