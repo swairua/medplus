@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,10 +8,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
+import {
   Receipt,
   Calendar,
   User,
@@ -21,8 +31,10 @@ import {
   Download,
   Send,
   DollarSign,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react';
+import { useDeleteInvoice } from '@/hooks/useInvoicesFixed';
 
 interface ViewInvoiceModalProps {
   open: boolean;
