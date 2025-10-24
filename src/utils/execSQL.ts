@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { parseErrorMessage } from '@/utils/errorHelpers';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Execute SQL statements in Supabase
