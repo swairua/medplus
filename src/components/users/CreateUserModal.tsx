@@ -179,13 +179,6 @@ export function CreateUserModal({
     }
   };
 
-  const roleOptions = [
-    { value: 'user', label: 'User', description: 'Basic access to view and create quotations' },
-    { value: 'stock_manager', label: 'Stock Manager', description: 'Manage inventory and stock movements' },
-    { value: 'accountant', label: 'Accountant', description: 'Access to financial reports and records' },
-    { value: 'admin', label: 'Administrator', description: 'Full access to all system features' },
-  ];
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
