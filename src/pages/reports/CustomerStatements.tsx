@@ -64,6 +64,14 @@ export default function CustomerStatements() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
 
+  const { can: canViewReports, can: canExportReports, loading: permissionsLoading } = usePermissions();
+
+  useEffect(() => {
+    if (!permissionsLoading && !canViewReports('view_reports')) {
+      toast.error('You do not have permission to view reports');
+    }
+  }, [permissionsLoading, canViewReports]);
+
   // Calculate customer statements
   const calculateCustomerStatements = (): CustomerStatement[] => {
     if (!customers || !invoices || !payments) return [];
