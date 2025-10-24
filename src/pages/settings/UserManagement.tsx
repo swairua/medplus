@@ -182,20 +182,37 @@ export default function UserManagement() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setModalState({ type: 'invite' })}
           >
             <Mail className="h-4 w-4 mr-2" />
             Invite User
           </Button>
-          <Button 
-            variant="primary-gradient" 
+          <Button
+            variant="primary-gradient"
             size="lg"
             onClick={() => setModalState({ type: 'create' })}
           >
             <UserPlus className="h-4 w-4 mr-2" />
             Add User
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={async () => {
+              // Confirm destructive action
+              const ok = window.confirm('Are you sure you want to promote all existing users to admin? This cannot be easily undone.');
+              if (!ok) return;
+              const res = await promoteAllToAdmin();
+              if (res.success) {
+                toast.success(`Promoted ${res.count || 0} users to admin`);
+              } else {
+                toast.error(res.error || 'Failed to promote users');
+              }
+            }}
+          >
+            Promote all to Admin
           </Button>
         </div>
       </div>
