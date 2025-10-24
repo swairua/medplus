@@ -58,6 +58,18 @@ export default function SalesReports() {
   const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers(companyId);
   const { data: products, isLoading: productsLoading, error: productsError } = useProducts(companyId);
 
+  // Derive creators from invoices (use invoices' created_by_profile if available)
+  const creators = useMemo(() => {
+    if (!invoices) return [];
+    const map = new Map<string, { id: string; name: string }>();
+    invoices.forEach(inv => {
+      const id = inv.created_by || (inv.created_by_profile && inv.created_by_profile.id) || null;
+      const name = inv.created_by_profile?.full_name || inv.created_by || 'System';
+      if (id && !map.has(id)) map.set(id, { id, name });
+    });
+    return Array.from(map.values());
+  }, [invoices]);
+
   const isLoading = invoicesLoading || customersLoading || productsLoading;
   const hasError = invoicesError || customersError || productsError;
 
