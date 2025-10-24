@@ -32,11 +32,11 @@ BEGIN
         FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;
     END IF;
 
-    -- Add created_by foreign key if users table exists
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN
-        ALTER TABLE stock_movements 
-        ADD CONSTRAINT fk_stock_movements_created_by 
-        FOREIGN KEY (created_by) REFERENCES users(id);
+    -- Add created_by foreign key if profiles table exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'profiles') THEN
+        ALTER TABLE stock_movements
+        ADD CONSTRAINT fk_stock_movements_created_by
+        FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL;
     END IF;
 END $$;
 
