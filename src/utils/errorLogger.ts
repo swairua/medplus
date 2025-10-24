@@ -51,11 +51,31 @@ export const extractErrorDetails = (error: unknown, context?: Record<string, any
 };
 
 /**
+ * Safely serialize objects, handling circular references
+ */
+const safeStringify = (obj: any): string => {
+  const seen = new WeakSet();
+  try {
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+      }
+      return value;
+    }, 2);
+  } catch {
+    return String(obj);
+  }
+};
+
+/**
  * Logs errors with proper formatting to prevent [object Object] issues
  */
 export const logError = (label: string, error: unknown, context?: Record<string, any>) => {
   const errorDetails = extractErrorDetails(error, context);
-  console.error(label, JSON.stringify(errorDetails, null, 2));
+  console.error(label, safeStringify(errorDetails));
 };
 
 /**
