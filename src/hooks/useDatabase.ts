@@ -355,18 +355,96 @@ export const useUpdateCustomer = () => {
 
 export const useDeleteCustomer = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      // 1. Fetch the complete customer with all related data counts
+      const { data: customer, error: fetchError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!customer) throw new Error('Customer not found');
+
+      // 2. Count related records
+      const [invoices, quotations, creditNotes, deliveryNotes, payments, lposAsSupplier] = await Promise.all([
+        supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('quotations').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('credit_notes').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('delivery_notes').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('payments').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('lpos').select('id', { count: 'exact', head: true }).eq('supplier_id', id),
+      ]);
+
+      const relatedCounts = {
+        invoices: invoices.count || 0,
+        quotations: quotations.count || 0,
+        credit_notes: creditNotes.count || 0,
+        delivery_notes: deliveryNotes.count || 0,
+        payments: payments.count || 0,
+        lpos_as_supplier: lposAsSupplier.count || 0,
+      };
+
+      // 3. Delete the customer (cascade deletes related records)
+      const { error: deleteError } = await supabase
         .from('customers')
         .delete()
         .eq('id', id);
-      
-      if (error) throw error;
+
+      if (deleteError) throw deleteError;
+
+      // 4. Log the deletion with full snapshot
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data?.user?.id || null;
+        const userEmail = (data?.user?.email as string) || null;
+
+        await supabase.from('audit_logs').insert([
+          {
+            action: 'DELETE',
+            entity_type: 'customer',
+            record_id: id,
+            company_id: customer.company_id,
+            actor_user_id: userId,
+            actor_email: userEmail,
+            details: {
+              customer_code: customer.customer_code,
+              name: customer.name,
+              email: customer.email,
+              phone: customer.phone,
+              credit_limit: customer.credit_limit,
+              is_active: customer.is_active,
+              invoices_deleted: relatedCounts.invoices,
+              quotations_deleted: relatedCounts.quotations,
+              credit_notes_deleted: relatedCounts.credit_notes,
+              delivery_notes_deleted: relatedCounts.delivery_notes,
+              payments_deleted: relatedCounts.payments,
+              lpos_as_supplier_deleted: relatedCounts.lpos_as_supplier,
+            },
+          },
+        ]);
+      } catch (auditError) {
+        console.warn('Audit log creation failed:', auditError);
+      }
+
+      return { customerId: id, relatedCounts };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      toast.success('Customer deleted successfully! All related records have been updated.');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting customer:', error);
+      const errorMessage = error.message || 'Failed to delete customer. Please try again.';
+      toast.error(errorMessage);
     },
   });
 };
@@ -1710,15 +1788,69 @@ export const useDeleteLPO = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      // 1. Fetch the complete LPO with all related data
+      const { data: lpo, error: fetchError } = await supabase
+        .from('lpos')
+        .select('*, lpo_items(*)')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!lpo) throw new Error('Purchase order not found');
+
+      // 2. Count related invoices (if any)
+      const { count: invoiceCount = 0 } = await supabase
+        .from('invoices')
+        .select('id', { count: 'exact', head: true })
+        .eq('lpo_id', id);
+
+      // 3. Delete the LPO (cascade deletes lpo_items)
+      const { error: deleteError } = await supabase
         .from('lpos')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+
+      // 4. Log the deletion with full snapshot
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data?.user?.id || null;
+        const userEmail = (data?.user?.email as string) || null;
+
+        await supabase.from('audit_logs').insert([
+          {
+            action: 'DELETE',
+            entity_type: 'lpo',
+            record_id: id,
+            company_id: lpo.company_id,
+            actor_user_id: userId,
+            actor_email: userEmail,
+            details: {
+              lpo_number: lpo.lpo_number,
+              supplier_id: lpo.supplier_id,
+              status: lpo.status,
+              total_amount: lpo.total_amount,
+              items_deleted: lpo.lpo_items?.length || 0,
+              invoices_affected: invoiceCount,
+            },
+          },
+        ]);
+      } catch (auditError) {
+        console.warn('Audit log creation failed:', auditError);
+      }
+
+      return { lpoId: id, itemsCount: lpo.lpo_items?.length || 0, invoiceCount };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success('Purchase order deleted successfully! All related records have been updated.');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting purchase order:', error);
+      const errorMessage = error.message || 'Failed to delete purchase order. Please try again.';
+      toast.error(errorMessage);
     },
   });
 };
