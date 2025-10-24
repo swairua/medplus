@@ -28,7 +28,8 @@ import {
   AlertTriangle,
   FileText,
   User,
-  Database
+  Database,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLPOs, useUpdateLPO, useCompanies } from '@/hooks/useDatabase';
