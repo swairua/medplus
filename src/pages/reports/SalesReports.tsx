@@ -251,20 +251,41 @@ export default function SalesReports() {
 
   const stats = calculateStats();
 
+  // Format currency to Kenyan Shillings
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   const handleExport = () => {
     const filteredInvoices = getFilteredInvoices();
-    const reportData = {
-      dateRange,
-      startDate,
-      endDate,
-      totalSales: filteredInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0),
-      totalInvoices: filteredInvoices.length,
-      topProducts: topProductsData,
-      topCustomers: topCustomersData,
-      monthlySales: monthlySalesData
-    };
-    
-    console.log('Export data:', reportData);
+
+    // Build CSV
+    const headers = ['Invoice Number','Invoice Date','Customer','Created By','Status','Total Amount'];
+    const rows = filteredInvoices.map(inv => [
+      inv.invoice_number,
+      new Date(inv.invoice_date).toLocaleDateString(),
+      inv.customers?.name || inv.customer_id || 'Unknown',
+      inv.created_by_profile?.full_name || inv.created_by || 'System',
+      inv.status || '',
+      formatCurrency(inv.total_amount || 0)
+    ]);
+
+    const csvContent = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `sales-report-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
     toast.success('Sales report exported successfully!');
   };
 
