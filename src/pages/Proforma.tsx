@@ -433,14 +433,9 @@ export default function Proforma() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={async () => {
-                            const ok = window.confirm(`Delete proforma invoice ${proforma.proforma_number}? This action cannot be undone.`);
-                            if (!ok) return;
-                            try {
-                              await handleDeleteProforma(proforma);
-                            } catch (e) {
-                              console.error('Inline delete failed:', e);
-                            }
+                          onClick={() => {
+                            setProformaToDelete(proforma);
+                            setShowDeleteDialog(true);
                           }}
                           title="Delete proforma"
                           className="text-destructive"
