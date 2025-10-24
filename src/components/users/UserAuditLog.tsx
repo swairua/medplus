@@ -71,7 +71,7 @@ export function UserAuditLog({ limit = 50 }: UserAuditLogProps) {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [actionFilter, setActionFilter] = useState<string>('');
+  const [actionFilter, setActionFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchAuditLogs();
