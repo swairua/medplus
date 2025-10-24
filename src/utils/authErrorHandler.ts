@@ -2,7 +2,7 @@ import { AuthError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 export interface AuthErrorInfo {
-  type: 'invalid_credentials' | 'email_not_confirmed' | 'network_error' | 'rate_limit' | 'server_error' | 'unknown';
+  type: 'invalid_credentials' | 'email_not_confirmed' | 'not_approved' | 'network_error' | 'rate_limit' | 'server_error' | 'unknown';
   message: string;
   action?: string;
   retry?: boolean;
