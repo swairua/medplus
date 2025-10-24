@@ -477,6 +477,13 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
+      // Get invitation details first for audit logging
+      const { data: invitationData } = await supabase
+        .from('user_invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .single();
+
       const { error } = await supabase
         .from('user_invitations')
         .update({
@@ -488,6 +495,16 @@ export const useUserManagement = () => {
 
       if (error) {
         throw error;
+      }
+
+      // Log approval in audit trail
+      try {
+        if (invitationData) {
+          await logUserApproval(invitationId, invitationData.email, invitationData.company_id, 'approved');
+        }
+      } catch (auditError) {
+        console.error('Failed to log approval to audit trail:', auditError);
+        // Don't fail the operation if audit logging fails
       }
 
       toast.success('Invitation approved successfully');
