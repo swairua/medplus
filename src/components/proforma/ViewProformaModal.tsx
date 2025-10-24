@@ -71,6 +71,7 @@ interface ViewProformaModalProps {
   onDownloadPDF?: (proforma: Proforma) => void;
   onSendEmail?: (proforma: Proforma) => void;
   onCreateInvoice?: (proforma: Proforma) => void;
+  onDelete?: () => void;
 }
 
 export const ViewProformaModal = ({ 
