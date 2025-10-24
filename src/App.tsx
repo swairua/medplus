@@ -20,6 +20,7 @@ import StatementOfAccounts from "./pages/reports/StatementOfAccounts";
 import CompanySettings from "./pages/settings/CompanySettings";
 import UserManagement from "./pages/settings/UserManagement";
 import RemittanceAdvice from "./pages/RemittanceAdvice";
+import AuditLogs from "./pages/AuditLogs";
 import LPOs from "./pages/LPOs";
 import CreditNotes from "./pages/CreditNotes";
 import NotFound from "./pages/NotFound";
@@ -138,13 +139,22 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/proforma" 
+          <Route
+            path="/proforma"
             element={
               <ProtectedRoute>
                 <Proforma />
               </ProtectedRoute>
-            } 
+            }
+          />
+
+          <Route
+            path="/admin/audit-logs"
+            element={
+              <ProtectedRoute>
+                <AuditLogs />
+              </ProtectedRoute>
+            }
           />
 
           {/* Procurement & Inventory */}
