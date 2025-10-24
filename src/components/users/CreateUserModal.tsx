@@ -38,6 +38,10 @@ export function CreateUserModal({
   onCreateUser,
   loading = false,
 }: CreateUserModalProps) {
+  const { profile: currentUser } = useAuth();
+  const [roles, setRoles] = useState<RoleDefinition[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
   const [formData, setFormData] = useState<CreateUserData>({
     email: '',
     full_name: '',
@@ -49,6 +53,41 @@ export function CreateUserModal({
     company_id: undefined
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Fetch roles from database when modal opens
+  useEffect(() => {
+    if (open && currentUser?.company_id) {
+      fetchRoles();
+    }
+  }, [open, currentUser?.company_id]);
+
+  const fetchRoles = async () => {
+    if (!currentUser?.company_id) return;
+
+    setRolesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('company_id', currentUser.company_id)
+        .order('is_default', { ascending: false })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      setRoles(data || []);
+
+      // Set default role to first role found, or 'user' if none found
+      if (data && data.length > 0 && !formData.role) {
+        setFormData(prev => ({ ...prev, role: data[0].name as UserRole }));
+      }
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      toast.error('Failed to load roles');
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
