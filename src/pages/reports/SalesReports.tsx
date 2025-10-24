@@ -437,7 +437,7 @@ export default function SalesReports() {
               <DollarSign className="h-8 w-8 text-success" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Daily Sales</p>
-                <p className="text-2xl font-bold text-success">${stats.dailySales.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(stats.dailySales)}</p>
                 <p className="text-xs text-success">Today's revenue</p>
               </div>
             </div>
@@ -450,7 +450,7 @@ export default function SalesReports() {
               <TrendingUp className="h-8 w-8 text-primary" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Monthly Sales</p>
-                <p className="text-2xl font-bold text-primary">${stats.monthlySales.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(stats.monthlySales)}</p>
                 <p className="text-xs text-success">Last 30 days</p>
               </div>
             </div>
@@ -463,7 +463,7 @@ export default function SalesReports() {
               <BarChart3 className="h-8 w-8 text-success" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Yearly Sales</p>
-                <p className="text-2xl font-bold text-success">${stats.yearlySales.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(stats.yearlySales)}</p>
                 <p className="text-xs text-success">This year</p>
               </div>
             </div>
