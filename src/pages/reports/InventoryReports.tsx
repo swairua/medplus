@@ -228,6 +228,11 @@ export default function InventoryReports() {
   };
 
   const handleExport = () => {
+    if (!canExportReports('export_reports')) {
+      toast.error('You do not have permission to export reports');
+      return;
+    }
+
     // Export full products inventory as CSV with useful columns
     const rows = (products || []).map((p: any) => ({
       product_code: p.product_code || '',
