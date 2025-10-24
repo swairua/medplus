@@ -157,7 +157,7 @@ export function RoleManagement() {
       if (result.success) {
         setEditDialogOpen(false);
         setEditingRole(null);
-        setFormData({ name: '', description: '', permissions: [] });
+        setFormData({ name: '', description: '', permissions: [], company_id: profile?.company_id || '' });
       } else {
         toast.error(result.error || 'Failed to update role');
       }
