@@ -380,20 +380,25 @@ export const useUserManagement = () => {
         return { success: false, error: 'Invalid or expired invitation' };
       }
 
+      // Check if invitation has been approved by admin
+      if (!invitation.is_approved) {
+        return { success: false, error: 'This invitation is pending admin approval. Please wait for your administrator to approve your account.' };
+      }
+
       // Check if invitation has expired
       if (new Date(invitation.expires_at) < new Date()) {
         await supabase
           .from('user_invitations')
           .update({ status: 'expired' })
           .eq('id', invitation.id);
-        
+
         return { success: false, error: 'Invitation has expired' };
       }
 
       // Mark invitation as accepted
       const { error: updateError } = await supabase
         .from('user_invitations')
-        .update({ 
+        .update({
           status: 'accepted',
           accepted_at: new Date().toISOString()
         })
