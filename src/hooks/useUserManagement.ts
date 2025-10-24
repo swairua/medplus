@@ -24,6 +24,8 @@ export interface CreateUserData {
   phone?: string;
   department?: string;
   position?: string;
+  password?: string; // optional: admin can set password directly
+  company_id?: string; // optional: super-admin can assign company when creating users
 }
 
 export interface UpdateUserData {
@@ -44,7 +46,7 @@ export const useUserManagement = () => {
 
   // Fetch all users in the same company
   const fetchUsers = async () => {
-    if (!currentUser?.company_id || !isAdmin) {
+    if (!isAdmin) {
       return;
     }
 
@@ -52,11 +54,17 @@ export const useUserManagement = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from('profiles')
         .select('*')
-        .eq('company_id', currentUser.company_id)
         .order('created_at', { ascending: false });
+
+      // If admin belongs to a company, limit to that company. Super-admins without company can fetch all users.
+      if (currentUser?.company_id) {
+        query.eq('company_id', currentUser.company_id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -75,16 +83,21 @@ export const useUserManagement = () => {
 
   // Fetch pending invitations
   const fetchInvitations = async () => {
-    if (!currentUser?.company_id || !isAdmin) {
+    if (!isAdmin) {
       return;
     }
 
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from('user_invitations')
         .select('*')
-        .eq('company_id', currentUser.company_id)
         .order('invited_at', { ascending: false });
+
+      if (currentUser?.company_id) {
+        query.eq('company_id', currentUser.company_id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -113,8 +126,8 @@ export const useUserManagement = () => {
   };
 
   // Create a new user (admin only)
-  const createUser = async (userData: CreateUserData): Promise<{ success: boolean; error?: string }> => {
-    if (!isAdmin || !currentUser?.company_id) {
+  const createUser = async (userData: CreateUserData): Promise<{ success: boolean; password?: string; error?: string }> => {
+    if (!isAdmin) {
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -133,9 +146,12 @@ export const useUserManagement = () => {
       }
 
       // Create auth user
+      // Use provided password if admin set one; otherwise generate a temporary one
+      const passwordToSet = userData.password && userData.password.length > 0 ? userData.password : generateTemporaryPassword();
+
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: userData.email,
-        password: generateTemporaryPassword(),
+        password: passwordToSet,
         email_confirm: true,
         user_metadata: {
           full_name: userData.full_name,
@@ -147,13 +163,15 @@ export const useUserManagement = () => {
       }
 
       // Update profile with additional data
+      const companyToSet = userData.company_id || currentUser?.company_id || null;
+
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           full_name: userData.full_name,
           role: userData.role,
           phone: userData.phone,
-          company_id: currentUser.company_id,
+          company_id: companyToSet,
           department: userData.department,
           position: userData.position,
           status: 'active',
@@ -166,7 +184,7 @@ export const useUserManagement = () => {
 
       toast.success('User created successfully');
       await fetchUsers();
-      return { success: true };
+      return { success: true, password: passwordToSet };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'user creation');
       console.error('Error creating user:', err);
@@ -374,13 +392,44 @@ export const useUserManagement = () => {
     }
   };
 
+  // Promote all existing users to admin (dangerous - admin only)
+  const promoteAllToAdmin = async (): Promise<{ success: boolean; count?: number; error?: string }> => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ role: 'admin' })
+        .or('role.is.null,role.neq.admin');
+
+      if (error) {
+        throw error;
+      }
+
+      const updatedCount = Array.isArray(data) ? data.length : 0;
+      toast.success(`Promoted ${updatedCount} users to admin`);
+      await fetchUsers();
+      return { success: true, count: updatedCount };
+    } catch (err) {
+      const errorMessage = parseErrorMessageWithCodes(err, 'promote all');
+      console.error('Error promoting users:', err);
+      toast.error(`Failed to promote users: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Get user statistics
   const getUserStats = () => {
     const totalUsers = users.length;
     const activeUsers = users.filter(u => u.status === 'active').length;
     const pendingUsers = users.filter(u => u.status === 'pending').length;
     const inactiveUsers = users.filter(u => u.status === 'inactive').length;
-    
+
     const adminUsers = users.filter(u => u.role === 'admin').length;
     const accountantUsers = users.filter(u => u.role === 'accountant').length;
     const stockManagerUsers = users.filter(u => u.role === 'stock_manager').length;
@@ -403,11 +452,11 @@ export const useUserManagement = () => {
 
   // Load data on mount
   useEffect(() => {
-    if (isAdmin && currentUser?.company_id) {
+    if (isAdmin) {
       fetchUsers();
       fetchInvitations();
     }
-  }, [isAdmin, currentUser?.company_id]);
+  }, [isAdmin]);
 
   return {
     users,
@@ -423,6 +472,7 @@ export const useUserManagement = () => {
     revokeInvitation,
     acceptInvitation,
     getUserStats,
+    promoteAllToAdmin,
   };
 };
 

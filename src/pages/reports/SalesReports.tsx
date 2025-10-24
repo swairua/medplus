@@ -40,62 +40,77 @@ import {
 import { useCustomers, useProducts } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
+import useUserManagement from '@/hooks/useUserManagement';
 import { toast } from 'sonner';
+import { useEffect, useMemo } from 'react';
 
 export default function SalesReports() {
   const [dateRange, setDateRange] = useState('last_30_days');
   const [reportType, setReportType] = useState('overview');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [creatorFilter, setCreatorFilter] = useState<string>('all');
 
   const companyId = useCurrentCompanyId();
+  const { users, fetchUsers } = useUserManagement();
 
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(companyId);
   const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers(companyId);
   const { data: products, isLoading: productsLoading, error: productsError } = useProducts(companyId);
 
+  // Derive creators from invoices (use invoices' created_by_profile if available)
+  const creators = useMemo(() => {
+    if (!invoices) return [];
+    const map = new Map<string, { id: string; name: string }>();
+    invoices.forEach(inv => {
+      const id = inv.created_by || (inv.created_by_profile && inv.created_by_profile.id) || null;
+      const name = inv.created_by_profile?.full_name || inv.created_by || 'System';
+      if (id && !map.has(id)) map.set(id, { id, name });
+    });
+    return Array.from(map.values());
+  }, [invoices]);
+
   const isLoading = invoicesLoading || customersLoading || productsLoading;
   const hasError = invoicesError || customersError || productsError;
 
-  // Get filtered invoices based on date range
+  // Get filtered invoices based on date range and creator filter
   const getFilteredInvoices = () => {
     if (!invoices) return [];
 
-    if (dateRange === 'custom' && startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999); // Include full end date
-      
-      return invoices.filter(invoice => {
-        const invoiceDate = new Date(invoice.invoice_date);
-        return invoiceDate >= start && invoiceDate <= end;
-      });
-    }
+    const byDateRange = (() => {
+      if (dateRange === 'custom' && startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // Include full end date
+        return invoices.filter(invoice => {
+          const invoiceDate = new Date(invoice.invoice_date);
+          return invoiceDate >= start && invoiceDate <= end;
+        });
+      }
 
-    const now = new Date();
-    let filterStart = new Date();
-    
-    switch (dateRange) {
-      case 'last_7_days':
-        filterStart.setDate(now.getDate() - 7);
-        break;
-      case 'last_30_days':
-        filterStart.setDate(now.getDate() - 30);
-        break;
-      case 'last_90_days':
-        filterStart.setDate(now.getDate() - 90);
-        break;
-      case 'this_year':
-        filterStart = new Date(now.getFullYear(), 0, 1);
-        break;
-      default:
-        filterStart.setDate(now.getDate() - 30);
-    }
-    
-    return invoices.filter(invoice => {
-      const invoiceDate = new Date(invoice.invoice_date);
-      return invoiceDate >= filterStart;
-    });
+      const now = new Date();
+      let filterStart = new Date();
+      switch (dateRange) {
+        case 'last_7_days':
+          filterStart.setDate(now.getDate() - 7);
+          break;
+        case 'last_30_days':
+          filterStart.setDate(now.getDate() - 30);
+          break;
+        case 'last_90_days':
+          filterStart.setDate(now.getDate() - 90);
+          break;
+        case 'this_year':
+          filterStart = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          filterStart.setDate(now.getDate() - 30);
+      }
+      return invoices.filter(invoice => new Date(invoice.invoice_date) >= filterStart);
+    })();
+
+    if (creatorFilter === 'all') return byDateRange;
+    return byDateRange.filter(inv => inv.created_by === creatorFilter);
   };
 
   // Calculate monthly sales data from filtered invoices
@@ -209,6 +224,10 @@ export default function SalesReports() {
   const topProductsData = calculateTopProductsData();
   const topCustomersData = calculateTopCustomersData();
 
+  useEffect(() => {
+    if (companyId) fetchUsers();
+  }, [companyId]);
+
   // Calculate stats from filtered and unfiltered data
   const calculateStats = () => {
     const filteredInvoices = getFilteredInvoices();
@@ -244,20 +263,41 @@ export default function SalesReports() {
 
   const stats = calculateStats();
 
+  // Format currency to Kenyan Shillings
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   const handleExport = () => {
     const filteredInvoices = getFilteredInvoices();
-    const reportData = {
-      dateRange,
-      startDate,
-      endDate,
-      totalSales: filteredInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0),
-      totalInvoices: filteredInvoices.length,
-      topProducts: topProductsData,
-      topCustomers: topCustomersData,
-      monthlySales: monthlySalesData
-    };
-    
-    console.log('Export data:', reportData);
+
+    // Build CSV
+    const headers = ['Invoice Number','Invoice Date','Customer','Created By','Status','Total Amount'];
+    const rows = filteredInvoices.map(inv => [
+      inv.invoice_number,
+      new Date(inv.invoice_date).toLocaleDateString(),
+      inv.customers?.name || inv.customer_id || 'Unknown',
+      inv.created_by_profile?.full_name || inv.created_by || 'System',
+      inv.status || '',
+      formatCurrency(inv.total_amount || 0)
+    ]);
+
+    const csvContent = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `sales-report-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
     toast.success('Sales report exported successfully!');
   };
 
@@ -351,6 +391,21 @@ export default function SalesReports() {
               <SelectItem value="custom">Custom range</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Creator filter */}
+                  <Select value={creatorFilter} onValueChange={(v) => setCreatorFilter(v)}>
+            <SelectTrigger className="w-56">
+              <Users className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filter by creator" />
+            </SelectTrigger>
+              <SelectContent>
+              <SelectItem value="all">All creators</SelectItem>
+              {(creators || []).map(creator => (
+                <SelectItem key={creator.id} value={creator.id}>{creator.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Button variant="outline" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -394,7 +449,7 @@ export default function SalesReports() {
               <DollarSign className="h-8 w-8 text-success" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Daily Sales</p>
-                <p className="text-2xl font-bold text-success">${stats.dailySales.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(stats.dailySales)}</p>
                 <p className="text-xs text-success">Today's revenue</p>
               </div>
             </div>
@@ -407,7 +462,7 @@ export default function SalesReports() {
               <TrendingUp className="h-8 w-8 text-primary" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Monthly Sales</p>
-                <p className="text-2xl font-bold text-primary">${stats.monthlySales.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(stats.monthlySales)}</p>
                 <p className="text-xs text-success">Last 30 days</p>
               </div>
             </div>
@@ -420,7 +475,7 @@ export default function SalesReports() {
               <BarChart3 className="h-8 w-8 text-success" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Yearly Sales</p>
-                <p className="text-2xl font-bold text-success">${stats.yearlySales.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(stats.yearlySales)}</p>
                 <p className="text-xs text-success">This year</p>
               </div>
             </div>
@@ -474,7 +529,7 @@ export default function SalesReports() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                  <Tooltip formatter={(value) => [formatCurrency(value as number), 'Sales']} />
                   <Legend />
                   <Line type="monotone" dataKey="sales" stroke="#8884d8" strokeWidth={2} />
                 </LineChart>
@@ -516,7 +571,7 @@ export default function SalesReports() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, value }) => `${name}: $${value}`}
+                    label={({ name, value }) => `${name}: ${formatCurrency(value as number)}` }
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="sales"
@@ -525,7 +580,7 @@ export default function SalesReports() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                  <Tooltip formatter={(value) => [formatCurrency(value as number), 'Sales']} />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -541,7 +596,7 @@ export default function SalesReports() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                  <Tooltip formatter={(value) => [formatCurrency(value as number), 'Sales']} />
                   <Bar dataKey="sales" fill="#8884d8" />
                 </BarChart>
               </ResponsiveContainer>
@@ -569,9 +624,9 @@ export default function SalesReports() {
                 {topCustomersData.map((customer, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>${customer.sales.toFixed(2)}</TableCell>
+                    <TableCell>{formatCurrency(customer.sales)}</TableCell>
                     <TableCell>{customer.invoices}</TableCell>
-                    <TableCell>${(customer.sales / customer.invoices).toFixed(2)}</TableCell>
+                    <TableCell>{formatCurrency(customer.sales / customer.invoices)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -636,10 +691,10 @@ export default function SalesReports() {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Average Order Value</span>
                 <span className="font-medium">
-                  ${invoices && invoices.length > 0
-                    ? (invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) / invoices.length).toFixed(2)
-                    : '0.00'
-                  }
+                  {formatCurrency(invoices && invoices.length > 0
+                    ? (invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) / invoices.length)
+                    : 0
+                  )}
                 </span>
               </div>
             </div>

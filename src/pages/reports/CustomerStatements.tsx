@@ -30,7 +30,7 @@ import { useCustomers, usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { toast } from 'sonner';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
-import { exportCustomerStatementsToCSV, exportCustomerStatementSummaryToCSV } from '@/utils/csvExporter';
+import { exportCustomerStatementsToCSV, exportCustomerStatementSummaryToCSV, exportCustomerStatementsToExcel } from '@/utils/csvExporter';
 import CustomerStatementPreviewModal from '@/components/statements/CustomerStatementPreviewModal';
 
 interface CustomerStatement {
@@ -66,12 +66,33 @@ export default function CustomerStatements() {
   const calculateCustomerStatements = (): CustomerStatement[] => {
     if (!customers || !invoices || !payments) return [];
 
+    // Helper to filter invoices by selected dateRange
+    const invoiceInRange = (inv: any) => {
+      if (!inv || !inv.invoice_date) return false;
+      const invDate = new Date(inv.invoice_date);
+      const today = new Date();
+
+      switch (dateRange) {
+        case 'last_30_days':
+          return invDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30);
+        case 'last_90_days':
+          return invDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate() - 90);
+        case 'this_year':
+          return invDate.getFullYear() === today.getFullYear();
+        case 'custom':
+          // No custom range UI - fall back to all
+        case 'all_time':
+        default:
+          return true;
+      }
+    };
+
     return customers.map(customer => {
-      // Get customer invoices
-      const customerInvoices = invoices.filter(inv => inv.customer_id === customer.id);
-      
+      // Get customer invoices (apply date range filter)
+      const customerInvoices = invoices.filter(inv => inv.customer_id === customer.id && invoiceInRange(inv));
+
       // Calculate totals
-      const totalOutstanding = customerInvoices.reduce((sum, inv) => 
+      const totalOutstanding = customerInvoices.reduce((sum, inv) =>
         sum + ((inv.total_amount || 0) - (inv.paid_amount || 0)), 0
       );
 
@@ -181,16 +202,17 @@ export default function CustomerStatements() {
   };
 
   const handleGenerateStatements = async () => {
-    if (selectedCustomers.length === 0) {
-      toast.error('Please select at least one customer');
+    // Allow generating for all filtered statements when none selected
+    const targetStatements = selectedCustomers.length > 0
+      ? filteredStatements.filter(s => selectedCustomers.includes(s.customer_id))
+      : filteredStatements;
+
+    if (targetStatements.length === 0) {
+      toast.error('No customer statements to generate');
       return;
     }
 
     try {
-      const selectedStatements = filteredStatements.filter(s =>
-        selectedCustomers.includes(s.customer_id)
-      );
-
       // Prepare company details for PDF
       const companyDetails = currentCompany ? {
         name: currentCompany.name,
@@ -203,7 +225,7 @@ export default function CustomerStatements() {
         logo_url: currentCompany.logo_url
       } : undefined;
 
-      for (const statement of selectedStatements) {
+      for (const statement of targetStatements) {
         const customer = customers?.find(c => c.id === statement.customer_id);
         if (customer) {
           const customerInvoices = invoices?.filter(inv => inv.customer_id === customer.id) || [];
@@ -215,7 +237,7 @@ export default function CustomerStatements() {
         }
       }
 
-      toast.success(`Generated ${selectedCustomers.length} customer statement${selectedCustomers.length > 1 ? 's' : ''}`);
+      toast.success(`Generated ${targetStatements.length} customer statement${targetStatements.length > 1 ? 's' : ''}`);
     } catch (error) {
       console.error('Error generating statements:', error);
       toast.error('Failed to generate some statements');
@@ -223,17 +245,15 @@ export default function CustomerStatements() {
   };
 
   const handleSendStatements = async () => {
-    if (selectedCustomers.length === 0) {
-      toast.error('Please select at least one customer');
-      return;
-    }
+    // Allow sending for all filtered statements when none selected
+    const target = selectedCustomers.length > 0
+      ? filteredStatements.filter(s => selectedCustomers.includes(s.customer_id))
+      : filteredStatements;
 
-    const selectedWithEmail = filteredStatements.filter(s =>
-      selectedCustomers.includes(s.customer_id) && s.customer_email
-    );
+    const selectedWithEmail = target.filter(s => s.customer_email);
 
     if (selectedWithEmail.length === 0) {
-      toast.error('Selected customers have no email addresses');
+      toast.error('No customers with email addresses to send to');
       return;
     }
 
@@ -281,13 +301,16 @@ export default function CustomerStatements() {
         return;
       }
 
-      // Export both detailed and summary reports
+      // Export both detailed and summary reports (CSV)
       exportCustomerStatementsToCSV(statementsToExport);
       exportCustomerStatementSummaryToCSV(statementsToExport,
         `customer-statements-summary-${new Date().toISOString().split('T')[0]}.csv`
       );
 
-      toast.success(`Exported ${statementsToExport.length} customer statements to CSV`);
+      // Also provide an Excel-friendly export (HTML table .xls)
+      exportCustomerStatementsToExcel(statementsToExport, `customer-statements-${new Date().toISOString().split('T')[0]}.xls`);
+
+      toast.success(`Exported ${statementsToExport.length} customer statements`);
     } catch (error) {
       console.error('Error exporting statements:', error);
       toast.error('Failed to export customer statements');

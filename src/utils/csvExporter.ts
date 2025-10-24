@@ -43,7 +43,7 @@ export const exportCustomerStatementsToCSV = (statements: CustomerStatementData[
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
-  
+
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -53,6 +53,68 @@ export const exportCustomerStatementsToCSV = (statements: CustomerStatementData[
     link.click();
     document.body.removeChild(link);
   }
+};
+
+// Simple Excel-friendly export using HTML table and MS Excel MIME type (.xls)
+export const exportCustomerStatementsToExcel = (statements: CustomerStatementData[], filename?: string) => {
+  if (!statements || statements.length === 0) return;
+
+  const headers = [
+    'Customer Name',
+    'Email',
+    'Total Outstanding',
+    'Current Due',
+    'Overdue Amount',
+    'Days Overdue',
+    'Last Payment Date',
+    'Last Payment Amount',
+    'Invoice Count'
+  ];
+
+  const rows = statements.map(s => [
+    s.customer_name,
+    s.customer_email || '',
+    s.total_outstanding.toFixed(2),
+    s.current_due.toFixed(2),
+    s.overdue_amount.toFixed(2),
+    s.days_overdue.toString(),
+    s.last_payment_date ? new Date(s.last_payment_date).toLocaleDateString() : '',
+    s.last_payment_amount ? s.last_payment_amount.toFixed(2) : '',
+    s.invoice_count.toString()
+  ]);
+
+  // Build HTML table
+  const table = `
+    <table>
+      <thead>
+        <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `<tr>${r.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:Print><x:ValidPrinterInfo/></x:Print></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+      </head>
+      <body>
+        ${table}
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.setAttribute('download', filename || `customer-statements-${new Date().toISOString().split('T')[0]}.xls`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 export const exportCustomerStatementSummaryToCSV = (statements: CustomerStatementData[], filename?: string) => {

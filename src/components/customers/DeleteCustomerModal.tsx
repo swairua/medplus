@@ -48,15 +48,17 @@ export function DeleteCustomerModal({
 
   if (!customer) return null;
 
-  const totalRelatedRecords =
-    (relatedRecordsCounts.invoices || 0) +
-    (relatedRecordsCounts.quotations || 0) +
-    (relatedRecordsCounts.credit_notes || 0) +
-    (relatedRecordsCounts.delivery_notes || 0) +
-    (relatedRecordsCounts.payments || 0) +
-    (relatedRecordsCounts.lpos_as_supplier || 0);
+  const counts = relatedRecordsCounts ?? {};
 
-  const hasLPOAsSupplier = (relatedRecordsCounts.lpos_as_supplier || 0) > 0;
+  const totalRelatedRecords =
+    (counts.invoices || 0) +
+    (counts.quotations || 0) +
+    (counts.credit_notes || 0) +
+    (counts.delivery_notes || 0) +
+    (counts.payments || 0) +
+    (counts.lpos_as_supplier || 0);
+
+  const hasLPOAsSupplier = (counts.lpos_as_supplier || 0) > 0;
 
   const handleConfirm = async () => {
     if (confirmed) {
@@ -129,8 +131,8 @@ export function DeleteCustomerModal({
               <AlertTriangle className="h-4 w-4 text-destructive" />
               <AlertTitle className="text-destructive">Critical: Supplier Usage</AlertTitle>
               <AlertDescription className="mt-2 text-destructive/90">
-                This customer is used as a supplier in {relatedRecordsCounts.lpos_as_supplier} 
-                purchase order(s). Deleting this customer will permanently remove all related purchase 
+                This customer is used as a supplier in {counts.lpos_as_supplier}
+                purchase order(s). Deleting this customer will permanently remove all related purchase
                 orders and their items. This cannot be undone.
               </AlertDescription>
             </Alert>
@@ -143,23 +145,23 @@ export function DeleteCustomerModal({
               <AlertTitle>Related Records</AlertTitle>
               <AlertDescription className="mt-2 space-y-1">
                 <div>The following records will be deleted:</div>
-                {relatedRecordsCounts.invoices && relatedRecordsCounts.invoices > 0 && (
-                  <div>• {relatedRecordsCounts.invoices} invoice(s)</div>
+                {counts.invoices && counts.invoices > 0 && (
+                  <div>• {counts.invoices} invoice(s)</div>
                 )}
-                {relatedRecordsCounts.quotations && relatedRecordsCounts.quotations > 0 && (
-                  <div>• {relatedRecordsCounts.quotations} quotation(s)</div>
+                {counts.quotations && counts.quotations > 0 && (
+                  <div>• {counts.quotations} quotation(s)</div>
                 )}
-                {relatedRecordsCounts.credit_notes && relatedRecordsCounts.credit_notes > 0 && (
-                  <div>• {relatedRecordsCounts.credit_notes} credit note(s)</div>
+                {counts.credit_notes && counts.credit_notes > 0 && (
+                  <div>• {counts.credit_notes} credit note(s)</div>
                 )}
-                {relatedRecordsCounts.delivery_notes && relatedRecordsCounts.delivery_notes > 0 && (
-                  <div>• {relatedRecordsCounts.delivery_notes} delivery note(s)</div>
+                {counts.delivery_notes && counts.delivery_notes > 0 && (
+                  <div>• {counts.delivery_notes} delivery note(s)</div>
                 )}
-                {relatedRecordsCounts.payments && relatedRecordsCounts.payments > 0 && (
-                  <div>• {relatedRecordsCounts.payments} payment(s)</div>
+                {counts.payments && counts.payments > 0 && (
+                  <div>• {counts.payments} payment(s)</div>
                 )}
-                {relatedRecordsCounts.lpos_as_supplier && relatedRecordsCounts.lpos_as_supplier > 0 && (
-                  <div>• {relatedRecordsCounts.lpos_as_supplier} purchase order(s) as supplier</div>
+                {counts.lpos_as_supplier && counts.lpos_as_supplier > 0 && (
+                  <div>• {counts.lpos_as_supplier} purchase order(s) as supplier</div>
                 )}
                 <div className="mt-2 text-xs">A complete audit log will be recorded.</div>
               </AlertDescription>

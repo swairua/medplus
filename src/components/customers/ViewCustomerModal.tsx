@@ -48,11 +48,11 @@ interface ViewCustomerModalProps {
 }
 
 export function ViewCustomerModal({ open, onOpenChange, customer, onEdit, onCreateInvoice }: ViewCustomerModalProps) {
-  if (!customer) return null;
+  // Fetch real customer data (hooks called unconditionally to preserve hook order)
+  const { data: invoices } = useCustomerInvoices(customer?.id);
+  const { data: payments } = useCustomerPayments(customer?.id);
 
-  // Fetch real customer data
-  const { data: invoices } = useCustomerInvoices(customer.id);
-  const { data: payments } = useCustomerPayments(customer.id);
+  if (!customer) return null;
 
   // Calculate real account metrics
   const totalInvoiced = invoices?.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) || 0;

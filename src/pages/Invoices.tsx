@@ -65,6 +65,8 @@ interface Invoice {
   balance_due: number;
   status: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue';
   invoice_items?: any[];
+  created_by?: string;
+  created_by_profile?: { full_name?: string } | null;
 }
 
 function getStatusColor(status: string) {
@@ -506,6 +508,7 @@ Website: www.biolegendscientific.co.ke`;
                   <TableHead>Amount</TableHead>
                   <TableHead>Paid</TableHead>
                   <TableHead>Balance</TableHead>
+                  <TableHead>Created By</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -544,6 +547,11 @@ Website: www.biolegendscientific.co.ke`;
                     </TableCell>
                     <TableCell className={`font-medium ${(invoice.balance_due || 0) > 0 ? 'text-destructive' : 'text-success'}`}>
                       {formatCurrency(invoice.balance_due || 0)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {invoice.created_by_profile?.full_name || invoice.created_by || 'System'}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getStatusColor(invoice.status)}>
