@@ -22,7 +22,8 @@ import {
   Download,
   Calendar,
   Send,
-  Receipt
+  Receipt,
+  Trash2
 } from 'lucide-react';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
