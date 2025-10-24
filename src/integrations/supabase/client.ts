@@ -27,10 +27,20 @@ console.log('✅ Supabase client initializing with URL:', SUPABASE_URL.substring
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+// Use a lazy singleton pattern to prevent duplicate instantiation
+let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
+
+function getSupabaseClient() {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        storage: localStorage,
+        persistSession: true,
+        autoRefreshToken: true,
+      }
+    });
   }
-});
+  return supabaseInstance;
+}
+
+export const supabase = getSupabaseClient();
