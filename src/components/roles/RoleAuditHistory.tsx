@@ -57,28 +57,60 @@ function formatActionBadge(action: string) {
 function PermissionChanges({ details }: { details: any }) {
   if (!details) return null;
 
-  const changes = details.changes || details;
-  if (!changes.permissions) return null;
+  const permissionChanges = details.permission_changes;
+  if (!permissionChanges && !details.permissions) return null;
 
   return (
-    <div className="space-y-2 text-sm">
-      <span className="font-semibold text-muted-foreground">Permissions Modified:</span>
-      <div className="space-y-1 ml-2">
-        {Array.isArray(changes.permissions) && changes.permissions.length > 0 ? (
-          changes.permissions.slice(0, 5).map((perm: string) => (
-            <div key={perm} className="text-xs bg-muted px-2 py-1 rounded">
-              {perm.replace(/_/g, ' ')}
+    <div className="space-y-3 text-sm">
+      {permissionChanges && (
+        <>
+          {permissionChanges.added && permissionChanges.added.length > 0 && (
+            <div>
+              <span className="font-semibold text-success">✓ Permissions Added ({permissionChanges.added.length}):</span>
+              <div className="space-y-1 ml-2 mt-1">
+                {permissionChanges.added.slice(0, 8).map((perm: string) => (
+                  <div
+                    key={perm}
+                    className="text-xs bg-success-light text-success px-2 py-1 rounded"
+                  >
+                    {perm.replace(/_/g, ' ')}
+                  </div>
+                ))}
+                {permissionChanges.added.length > 8 && (
+                  <div className="text-xs text-muted-foreground">
+                    +{permissionChanges.added.length - 8} more
+                  </div>
+                )}
+              </div>
             </div>
-          ))
-        ) : (
-          <div className="text-xs text-muted-foreground">No permission details</div>
-        )}
-        {Array.isArray(changes.permissions) && changes.permissions.length > 5 && (
-          <div className="text-xs text-muted-foreground">
-            +{changes.permissions.length - 5} more permissions
+          )}
+
+          {permissionChanges.removed && permissionChanges.removed.length > 0 && (
+            <div>
+              <span className="font-semibold text-destructive">✕ Permissions Removed ({permissionChanges.removed.length}):</span>
+              <div className="space-y-1 ml-2 mt-1">
+                {permissionChanges.removed.slice(0, 8).map((perm: string) => (
+                  <div
+                    key={perm}
+                    className="text-xs bg-destructive-light text-destructive px-2 py-1 rounded"
+                  >
+                    {perm.replace(/_/g, ' ')}
+                  </div>
+                ))}
+                {permissionChanges.removed.length > 8 && (
+                  <div className="text-xs text-muted-foreground">
+                    +{permissionChanges.removed.length - 8} more
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="text-xs text-muted-foreground pt-1 border-t">
+            Total permissions after change: {permissionChanges.total_permissions}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }
