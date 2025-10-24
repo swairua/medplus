@@ -15,6 +15,9 @@ export interface UserInvitation {
   accepted_at?: string;
   status: 'pending' | 'accepted' | 'expired' | 'revoked';
   invitation_token: string;
+  is_approved?: boolean;
+  approved_by?: string;
+  approved_at?: string;
 }
 
 export interface CreateUserData {
