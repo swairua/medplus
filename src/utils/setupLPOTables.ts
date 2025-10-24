@@ -74,7 +74,7 @@ export const executeLPOSetupSQL = async () => {
             delivery_address TEXT,
             contact_person VARCHAR(255),
             contact_phone VARCHAR(50),
-            created_by UUID REFERENCES users(id),
+            created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );

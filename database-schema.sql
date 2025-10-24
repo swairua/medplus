@@ -24,21 +24,10 @@ CREATE TABLE companies (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- User roles enum
-CREATE TYPE user_role AS ENUM ('admin', 'manager', 'accountant', 'stock_manager', 'sales', 'viewer');
-
--- Users table
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    role user_role NOT NULL DEFAULT 'viewer',
-    is_active BOOLEAN DEFAULT TRUE,
-    last_login TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- User roles enum (unified across app)
+-- Note: This is defined in the profiles migration
+-- CREATE TYPE user_role AS ENUM ('admin', 'accountant', 'stock_manager', 'user');
+-- Users are now managed via the profiles table which extends Supabase auth.users
 
 -- Customers table
 CREATE TABLE customers (
@@ -134,7 +123,7 @@ CREATE TABLE quotations (
     total_amount DECIMAL(15,2) DEFAULT 0,
     terms_and_conditions TEXT,
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -170,7 +159,7 @@ CREATE TABLE invoices (
     balance_due DECIMAL(15,2) DEFAULT 0,
     terms_and_conditions TEXT,
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -203,7 +192,7 @@ CREATE TABLE proforma_invoices (
     total_amount DECIMAL(15,2) DEFAULT 0,
     terms_and_conditions TEXT,
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -234,7 +223,7 @@ CREATE TABLE delivery_notes (
     received_by VARCHAR(255),
     delivery_address TEXT,
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -265,7 +254,7 @@ CREATE TABLE payments (
     payment_method payment_method NOT NULL,
     reference_number VARCHAR(255),
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -289,7 +278,7 @@ CREATE TABLE remittance_advice (
     total_payment DECIMAL(15,2) NOT NULL,
     status document_status DEFAULT 'draft',
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -322,7 +311,7 @@ CREATE TABLE stock_movements (
     reference_number VARCHAR(255),
     movement_date DATE NOT NULL,
     notes TEXT,
-    created_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -337,7 +326,6 @@ $$ language 'plpgsql';
 
 -- Apply triggers to relevant tables
 CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_suppliers_updated_at BEFORE UPDATE ON suppliers FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
@@ -384,15 +372,8 @@ VALUES (
     '/medplus-logo.png'
 );
 
--- Insert sample user
-INSERT INTO users (id, company_id, email, full_name, role) 
-VALUES (
-    '660e8400-e29b-41d4-a716-446655440000',
-    '550e8400-e29b-41d4-a716-446655440000',
-    'admin@medplusafrica.com',
-    'Dr. Sarah Johnson',
-    'admin'
-);
+-- Sample users are now managed via the profiles table and Supabase auth.users
+-- See migration 20250121120000_create_user_profiles_and_roles.sql for user management
 
 -- Insert sample customers
 INSERT INTO customers (company_id, customer_code, name, email, phone, address, city, country) VALUES

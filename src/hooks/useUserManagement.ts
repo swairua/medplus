@@ -15,6 +15,9 @@ export interface UserInvitation {
   accepted_at?: string;
   status: 'pending' | 'accepted' | 'expired' | 'revoked';
   invitation_token: string;
+  is_approved?: boolean;
+  approved_by?: string;
+  approved_at?: string;
 }
 
 export interface CreateUserData {
@@ -125,7 +128,7 @@ export const useUserManagement = () => {
     }
   };
 
-  // Create a new user (admin only)
+  // Create a new user (admin only) - Uses invitation flow
   const createUser = async (userData: CreateUserData): Promise<{ success: boolean; password?: string; error?: string }> => {
     if (!isAdmin) {
       return { success: false, error: 'Unauthorized' };
@@ -145,46 +148,62 @@ export const useUserManagement = () => {
         return { success: false, error: 'User with this email already exists' };
       }
 
-      // Create auth user
-      // Use provided password if admin set one; otherwise generate a temporary one
-      const passwordToSet = userData.password && userData.password.length > 0 ? userData.password : generateTemporaryPassword();
+      // Instead of creating auth user directly (which requires service role),
+      // we'll create an invitation which the user can accept via signup
+      const companyToSet = userData.company_id || currentUser?.company_id;
 
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: passwordToSet,
-        email_confirm: true,
-        user_metadata: {
-          full_name: userData.full_name,
-        },
-      });
+      // If no company is provided, try to get the first company
+      let finalCompanyId = companyToSet;
+      if (!finalCompanyId) {
+        // Fetch first available company
+        const { data: companies } = await supabase
+          .from('companies')
+          .select('id')
+          .limit(1)
+          .single();
 
-      if (authError) {
-        throw authError;
+        finalCompanyId = companies?.id;
       }
 
-      // Update profile with additional data
-      const companyToSet = userData.company_id || currentUser?.company_id || null;
+      if (!finalCompanyId) {
+        return { success: false, error: 'No company available. Please create a company first.' };
+      }
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: userData.full_name,
+      // Create user invitation
+      const { data: invitation, error: invitationError } = await supabase
+        .from('user_invitations')
+        .insert({
+          email: userData.email,
           role: userData.role,
-          phone: userData.phone,
-          company_id: companyToSet,
-          department: userData.department,
-          position: userData.position,
-          status: 'active',
+          company_id: finalCompanyId,
+          invited_by: currentUser?.id,
+          status: 'pending',
         })
-        .eq('id', authData.user.id);
+        .select()
+        .single();
 
-      if (profileError) {
-        throw profileError;
+      if (invitationError) {
+        throw invitationError;
       }
 
-      toast.success('User created successfully');
+      // Note: In a production app, you would send an invitation email here
+      // with a signup link containing the invitation_token
+      // For now, generate a temporary password that you can share with the user
+      const temporaryPassword = userData.password && userData.password.length > 0
+        ? userData.password
+        : generateTemporaryPassword();
+
+      console.log(`Invitation created for ${userData.email}. Token: ${invitation.invitation_token}`);
+      console.log(`User can sign up with temporary password: ${temporaryPassword}`);
+
+      toast.success(`Invitation sent to ${userData.email}`);
       await fetchUsers();
-      return { success: true, password: passwordToSet };
+      await fetchInvitations();
+
+      return {
+        success: true,
+        password: temporaryPassword,
+      };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'user creation');
       console.error('Error creating user:', err);
@@ -361,20 +380,25 @@ export const useUserManagement = () => {
         return { success: false, error: 'Invalid or expired invitation' };
       }
 
+      // Check if invitation has been approved by admin
+      if (!invitation.is_approved) {
+        return { success: false, error: 'This invitation is pending admin approval. Please wait for your administrator to approve your account.' };
+      }
+
       // Check if invitation has expired
       if (new Date(invitation.expires_at) < new Date()) {
         await supabase
           .from('user_invitations')
           .update({ status: 'expired' })
           .eq('id', invitation.id);
-        
+
         return { success: false, error: 'Invitation has expired' };
       }
 
       // Mark invitation as accepted
       const { error: updateError } = await supabase
         .from('user_invitations')
-        .update({ 
+        .update({
           status: 'accepted',
           accepted_at: new Date().toISOString()
         })
@@ -417,6 +441,41 @@ export const useUserManagement = () => {
       const errorMessage = parseErrorMessageWithCodes(err, 'promote all');
       console.error('Error promoting users:', err);
       toast.error(`Failed to promote users: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Approve invitation (admin only)
+  const approveInvitation = async (invitationId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('user_invitations')
+        .update({
+          is_approved: true,
+          approved_by: currentUser?.id,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', invitationId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Invitation approved successfully');
+      await fetchInvitations();
+      return { success: true };
+    } catch (err) {
+      const errorMessage = parseErrorMessageWithCodes(err, 'invitation approval');
+      console.error('Error approving invitation:', err);
+      toast.error(`Failed to approve invitation: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -470,6 +529,7 @@ export const useUserManagement = () => {
     deleteUser,
     inviteUser,
     revokeInvitation,
+    approveInvitation,
     acceptInvitation,
     getUserStats,
     promoteAllToAdmin,

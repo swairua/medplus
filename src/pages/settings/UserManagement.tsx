@@ -93,6 +93,7 @@ export default function UserManagement() {
     deleteUser,
     inviteUser,
     revokeInvitation,
+    approveInvitation,
     getUserStats,
     promoteAllToAdmin,
   } = useUserManagement();
@@ -170,6 +171,13 @@ export default function UserManagement() {
     const result = await revokeInvitation(invitationId);
     if (result.success) {
       toast.success('Invitation revoked successfully');
+    }
+  };
+
+  const handleApproveInvitation = async (invitationId: string) => {
+    const result = await approveInvitation(invitationId);
+    if (result.success) {
+      toast.success('Invitation approved successfully');
     }
   };
 

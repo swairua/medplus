@@ -1700,26 +1700,26 @@ export const useCreateLPO = () => {
         const { data: userData } = await supabase.auth.getUser();
         const authUserId = userData?.user?.id || null;
         if (authUserId) {
-          // Ensure the referenced user exists in the users table to avoid FK violations
+          // Ensure the referenced user exists in the profiles table to avoid FK violations
           try {
-            const { data: existingUser, error: userCheckError } = await supabase
-              .from('users')
+            const { data: existingProfile, error: profileCheckError } = await supabase
+              .from('profiles')
               .select('id')
               .eq('id', authUserId)
               .single();
 
-            if (userCheckError) {
-              console.warn('Could not verify auth user against users table:', userCheckError);
+            if (profileCheckError) {
+              console.warn('Could not verify auth user against profiles table:', profileCheckError);
               lpoPayload.created_by = null;
-            } else if (existingUser && existingUser.id) {
+            } else if (existingProfile && existingProfile.id) {
               lpoPayload.created_by = authUserId;
             } else {
-              // Auth user not present in users table - avoid FK violation
-              console.warn('Auth user id not found in users table, setting created_by to null:', authUserId);
+              // Auth user not present in profiles table - avoid FK violation
+              console.warn('Auth user id not found in profiles table, setting created_by to null:', authUserId);
               lpoPayload.created_by = null;
             }
           } catch (e) {
-            console.warn('Error checking users table for auth user:', e);
+            console.warn('Error checking profiles table for auth user:', e);
             lpoPayload.created_by = null;
           }
         } else if (typeof lpoPayload.created_by === 'undefined') {

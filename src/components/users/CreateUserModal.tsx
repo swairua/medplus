@@ -42,7 +42,8 @@ export function CreateUserModal({
     phone: '',
     department: '',
     position: '',
-    password: ''
+    password: '',
+    company_id: undefined
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -114,7 +115,8 @@ export function CreateUserModal({
       phone: '',
       department: '',
       position: '',
-      password: ''
+      password: '',
+      company_id: undefined
     });
     setFormErrors({});
   };
