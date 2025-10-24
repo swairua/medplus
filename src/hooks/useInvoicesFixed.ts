@@ -35,7 +35,8 @@ export const useInvoicesFixed = (companyId?: string) => {
             terms_and_conditions,
             lpo_number,
             created_at,
-            updated_at
+            updated_at,
+            created_by
           `)
           .eq('company_id', companyId)
           .order('created_at', { ascending: false });
@@ -110,7 +111,17 @@ export const useInvoicesFixed = (companyId?: string) => {
           itemsMap.get(item.invoice_id).push(item);
         });
 
-        // Step 7: Combine data
+        // Step 7: Fetch creators (profiles) for created_by mapping
+        const creatorIds = [...new Set(invoices.map(inv => inv.created_by).filter(id => id && typeof id === 'string'))];
+        const { data: creators } = creatorIds.length > 0 ? await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', creatorIds) : { data: [] };
+
+        const creatorMap = new Map();
+        (creators || []).forEach(c => creatorMap.set(c.id, c));
+
+        // Step 8: Combine data
         const enrichedInvoices = invoices.map(invoice => ({
           ...invoice,
           customers: customerMap.get(invoice.customer_id) || {
@@ -118,7 +129,8 @@ export const useInvoicesFixed = (companyId?: string) => {
             email: null,
             phone: null
           },
-          invoice_items: itemsMap.get(invoice.id) || []
+          invoice_items: itemsMap.get(invoice.id) || [],
+          created_by_profile: creatorMap.get(invoice.created_by) || null
         }));
 
         console.log('Invoices enriched successfully:', enrichedInvoices.length);
