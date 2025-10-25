@@ -351,7 +351,21 @@ export const useUserManagement = () => {
         // Don't fail the operation if audit logging fails
       }
 
-      // TODO: Send invitation email (would integrate with your email service)
+      // Send invitation email via Edge Function (service role)
+      try {
+        // If Edge Functions are available, invoke 'send-invite' with the invitation id
+        // This function should be deployed server-side and send the actual email using an SMTP/SendGrid key
+        if (typeof (supabase as any).functions?.invoke === 'function') {
+          const { error: fnError } = await (supabase as any).functions.invoke('send-invite', {
+            body: { invitation_id: invitation.id },
+          });
+          if (fnError) {
+            console.warn('send-invite function returned error:', fnError);
+          }
+        }
+      } catch (fnErr) {
+        console.warn('Failed to call send-invite function:', fnErr);
+      }
 
       toast.success('User invitation sent successfully');
       await fetchInvitations();
