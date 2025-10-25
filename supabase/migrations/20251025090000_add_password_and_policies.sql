@@ -32,6 +32,7 @@ for each row execute function public.profiles_hash_password();
 
 -- Optional: keep profiles in sync when a user is created in auth.users
 -- This makes admin-created users immediately active with metadata mirrored
+-- Approach: if a profile exists for the email, attach auth_user_id; otherwise create a new profile with auth_user_id set to the auth user id.
 create or replace function public.handle_auth_user_created()
 returns trigger
 language plpgsql
@@ -39,8 +40,26 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, full_name, role, status, is_active, created_at, updated_at)
+  -- Try to update an existing profile that matches the email (case-insensitive)
+  update public.profiles p
+  set
+    auth_user_id = new.id,
+    email = new.email,
+    full_name = coalesce(coalesce(new.raw_user_meta_data->>'full_name', new.user_metadata->>'full_name'), p.full_name),
+    role = coalesce(coalesce(new.raw_user_meta_data->>'role', new.user_metadata->>'role'), p.role),
+    status = 'active',
+    is_active = true,
+    updated_at = now()
+  where lower(p.email) = lower(new.email);
+
+  if found then
+    return new;
+  end if;
+
+  -- No existing profile, create a new profile record and set both id and auth_user_id to the new auth id
+  insert into public.profiles (id, auth_user_id, email, full_name, role, status, is_active, created_at, updated_at)
   values (
+    new.id,
     new.id,
     new.email,
     coalesce(coalesce(new.raw_user_meta_data->>'full_name', new.user_metadata->>'full_name'), null),
@@ -49,10 +68,8 @@ begin
     true,
     now(),
     now()
-  )
-  on conflict (id) do update
-    set email = excluded.email,
-        updated_at = now();
+  );
+
   return new;
 end;
 $$;
