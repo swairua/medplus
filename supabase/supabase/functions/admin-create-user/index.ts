@@ -143,6 +143,8 @@ Deno.serve(async (req) => {
           full_name: body.full_name,
           role: body.role,
           company_id: body.company_id,
+          department: body.department,
+          position: body.position,
         },
       });
 
