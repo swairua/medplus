@@ -84,6 +84,10 @@ do $$ begin
   end if;
 end $$;
 
+-- Add auth_user_id to link profiles to auth.users without changing primary id
+alter table if exists public.profiles
+  add column if not exists auth_user_id uuid;
+
 -- RLS: enable on profiles
 alter table public.profiles enable row level security;
 
@@ -97,9 +101,9 @@ set search_path = public
 as $$
   select exists (
     select 1 from public.profiles p
-    where p.id = auth.uid()
+    where (p.id = auth.uid() or p.auth_user_id = auth.uid())
       and p.company_id = target_company
-      and p.role in ('admin','super_admin')
+      and p.role::text in ('admin','super_admin')
   );
 $$;
 
@@ -107,13 +111,13 @@ $$;
 drop policy if exists "Read own profile" on public.profiles;
 create policy "Read own profile" on public.profiles
 for select
-using (id = auth.uid());
+using (id = auth.uid() or auth_user_id = auth.uid());
 
 drop policy if exists "Update own profile" on public.profiles;
 create policy "Update own profile" on public.profiles
 for update
-using (id = auth.uid())
-with check (id = auth.uid());
+using (id = auth.uid() or auth_user_id = auth.uid())
+with check (id = auth.uid() or auth_user_id = auth.uid());
 
 -- Company admins can view all users in their company
 drop policy if exists "Admins can view company users" on public.profiles;
