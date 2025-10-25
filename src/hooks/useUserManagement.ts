@@ -294,7 +294,7 @@ export const useUserManagement = () => {
   };
 
   // Invite user via email
-  const inviteUser = async (email: string, role: UserRole): Promise<{ success: boolean; error?: string }> => {
+  const inviteUser = async (email: string, role: UserRole | string): Promise<{ success: boolean; error?: string }> => {
     if (!isAdmin || !currentUser?.company_id) {
       return { success: false, error: 'Unauthorized' };
     }
