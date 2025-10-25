@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            id: userId,
+            auth_user_id: userId,
             email: body.email,
             full_name: body.full_name || existingProfile.full_name || null,
             phone: body.phone || existingProfile.phone || null,
