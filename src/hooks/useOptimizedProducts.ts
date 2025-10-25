@@ -134,7 +134,12 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
           // Use parseErrorMessage to extract useful text
           const { parseErrorMessage } = await import('@/utils/errorHelpers');
           const parsed = parseErrorMessage(authError);
-          console.error('Authentication error:', parsed, authError);
+          try {
+            const raw = typeof authError === 'object' ? JSON.stringify(authError) : String(authError);
+            console.error('Authentication error:', parsed, raw);
+          } catch (e) {
+            console.error('Authentication error:', parsed, authError);
+          }
           throw new Error(`Authentication failed: ${parsed}`);
         }
         if (!user) {
