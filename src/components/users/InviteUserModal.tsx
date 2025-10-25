@@ -96,12 +96,39 @@ export function InviteUserModal({
     }
   };
 
-  const roleOptions = [
-    { value: 'user', label: 'User', description: 'Basic access to view and create quotations' },
-    { value: 'stock_manager', label: 'Stock Manager', description: 'Manage inventory and stock movements' },
-    { value: 'accountant', label: 'Accountant', description: 'Access to financial reports and records' },
-    { value: 'admin', label: 'Administrator', description: 'Full access to all system features' },
-  ];
+  const [roleOptions, setRoleOptions] = useState<{ value: string; label: string; description?: string }[]>([]);
+  const { profile: currentUser } = useAuth();
+  const [rolesLoading, setRolesLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && currentUser?.company_id) {
+      fetchRoles();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, currentUser?.company_id]);
+
+  const fetchRoles = async () => {
+    if (!currentUser?.company_id) return;
+    setRolesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('id,name,description')
+        .eq('company_id', currentUser.company_id)
+        .order('is_default', { ascending: false })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      const options = (data || []).map((r: any) => ({ value: r.name, label: r.name, description: r.description }));
+      setRoleOptions(options.length ? options : [{ value: 'user', label: 'User', description: 'Default role' }]);
+    } catch (err) {
+      console.error('Error fetching roles for invite modal:', err);
+      setRoleOptions([{ value: 'user', label: 'User', description: 'Default role' }]);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
