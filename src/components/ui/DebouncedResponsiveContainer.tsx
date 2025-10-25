@@ -58,9 +58,27 @@ export const DebouncedResponsiveContainer: React.FC<DebouncedResponsiveContainer
     try {
       // Create a more robust resize observer with error handling
       observerRef.current = new ResizeObserver((entries) => {
+        // Temporarily disconnect to avoid triggering observer loops while we update layout
+        try {
+          observerRef.current?.disconnect();
+          isObservingRef.current = false;
+        } catch (e) {}
+
         // Use requestAnimationFrame to prevent synchronous layout thrashing
         requestAnimationFrame(() => {
           handleResize(entries);
+
+          // Re-observe after a short delay once layout has stabilized
+          setTimeout(() => {
+            try {
+              if (containerRef.current && observerRef.current && !isObservingRef.current) {
+                observerRef.current.observe(containerRef.current);
+                isObservingRef.current = true;
+              }
+            } catch (e) {
+              // ignore
+            }
+          }, Math.max(100, debounceMs + 50));
         });
       });
 
