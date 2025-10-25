@@ -211,6 +211,7 @@ Deno.serve(async (req) => {
           .from('profiles')
           .insert({
             id: userId,
+            auth_user_id: userId,
             email: body.email,
             full_name: body.full_name || null,
             phone: body.phone || null,
