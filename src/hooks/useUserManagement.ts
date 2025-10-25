@@ -370,7 +370,7 @@ export const useUserManagement = () => {
       // Log user invitation in audit trail
       try {
         if (invitation) {
-          await logUserCreation(invitation.id, email, role, currentUser.company_id);
+          await logUserCreation(invitation.id, email, normalizedRole, currentUser.company_id);
         }
       } catch (auditError) {
         console.error('Failed to log user invitation to audit trail:', auditError);
