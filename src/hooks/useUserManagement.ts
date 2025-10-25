@@ -325,12 +325,38 @@ export const useUserManagement = () => {
         return { success: false, error: 'Invitation already sent to this email' };
       }
 
+      // Normalize role to match database enum values
+      const normalizeRole = (r: any) => {
+        if (!r && r !== 0) return 'user';
+        const raw = String(r).trim();
+        const lower = raw.toLowerCase();
+        const mapping: Record<string,string> = {
+          'admin': 'admin',
+          'administrator': 'admin',
+          'accountant': 'accountant',
+          'stock_manager': 'stock_manager',
+          'stock-manager': 'stock_manager',
+          'stock manager': 'stock_manager',
+          'stockmanager': 'stock_manager',
+          'stock': 'stock_manager',
+          'user': 'user',
+        };
+        if (mapping[lower]) return mapping[lower];
+        // try gentle normalization
+        const normalized = lower.replace(/[\s-]/g, '_');
+        if (['admin','accountant','stock_manager','user'].includes(normalized)) return normalized;
+        // fallback to 'user'
+        return 'user';
+      };
+
+      const normalizedRole = normalizeRole(role);
+
       // Create invitation
       const { data: invitation, error } = await supabase
         .from('user_invitations')
         .insert({
           email,
-          role,
+          role: normalizedRole,
           company_id: currentUser.company_id,
           invited_by: currentUser.id,
         })
