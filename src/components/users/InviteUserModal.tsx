@@ -169,14 +169,22 @@ export function InviteUserModal({
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                {roleOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{option.label}</span>
-                      <span className="text-xs text-muted-foreground">{option.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {rolesLoading ? (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">Loading roles...</div>
+                ) : roleOptions.length === 0 ? (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">No roles available</div>
+                ) : (
+                  roleOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.label}</span>
+                        {option.description && (
+                          <span className="text-xs text-muted-foreground">{option.description}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {formErrors.role && (
