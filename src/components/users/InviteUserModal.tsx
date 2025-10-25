@@ -20,6 +20,8 @@ import {
 import { Loader2, Mail, Send } from 'lucide-react';
 import { UserRole } from '@/contexts/AuthContext';
 import { validateEmail } from '@/utils/validation';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface InviteUserModalProps {
   open: boolean;
