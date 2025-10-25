@@ -412,7 +412,7 @@ export function RoleManagement() {
                 </p>
               </div>
 
-              <ScrollArea className="h-[400px] border rounded-lg p-4">
+              <ScrollArea className="max-h-[60vh] h-auto md:h-[400px] border rounded-lg p-4">
                 <div className="space-y-6">
                   {Object.entries(PERMISSION_GROUPS).map(([group, permissions]) => {
                     const allIncluded = permissions.every((p) =>
