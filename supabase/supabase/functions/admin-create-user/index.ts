@@ -104,20 +104,6 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Check if user already exists
-    const { data: existingUser } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', body.email)
-      .maybeSingle();
-
-    if (existingUser) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'User with this email already exists' }),
-        { status: 409, headers: corsHeaders }
-      );
-    }
-
     // Verify company exists
     const { data: company } = await supabase
       .from('companies')
