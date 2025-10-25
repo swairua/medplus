@@ -164,46 +164,88 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create profile record with status 'active' (directly created users are immediately active)
+    // Create or update profile record with status 'active' (directly created users are immediately active)
     try {
-      const { error: profileError } = await supabase
+      // Check for existing profile by email
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .insert({
-          id: userId,
-          email: body.email,
-          full_name: body.full_name || null,
-          phone: body.phone || null,
-          department: body.department || null,
-          position: body.position || null,
-          company_id: body.company_id,
-          role: body.role,
-          status: 'active', // Auto-activate admin-created users
-          is_active: true,
-          password: body.password, // Will be hashed by DB trigger
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+        .select('*')
+        .eq('email', body.email)
+        .maybeSingle();
 
-      if (profileError) {
-        // Try to clean up auth user if profile creation fails
-        console.error('Profile creation error:', profileError);
-        try {
-          await supabase.auth.admin.deleteUser(userId);
-        } catch (cleanupErr) {
-          console.error('Failed to cleanup auth user after profile creation error:', cleanupErr);
+      if (existingProfile) {
+        // Update the placeholder profile (may have temporary id) to use the auth user id
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            id: userId,
+            email: body.email,
+            full_name: body.full_name || existingProfile.full_name || null,
+            phone: body.phone || existingProfile.phone || null,
+            department: body.department || existingProfile.department || null,
+            position: body.position || existingProfile.position || null,
+            company_id: body.company_id,
+            role: body.role,
+            status: 'active',
+            is_active: true,
+            password: body.password, // Will be hashed by DB trigger
+            updated_at: new Date().toISOString(),
+          })
+          .eq('email', body.email);
+
+        if (updateError) {
+          console.error('Profile update error:', updateError);
+          try {
+            await supabase.auth.admin.deleteUser(userId);
+          } catch (cleanupErr) {
+            console.error('Failed to cleanup auth user after profile update error:', cleanupErr);
+          }
+
+          return new Response(
+            JSON.stringify({ success: false, error: `Failed to update user profile: ${updateError.message}` }),
+            { status: 400, headers: corsHeaders }
+          );
         }
+      } else {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: body.email,
+            full_name: body.full_name || null,
+            phone: body.phone || null,
+            department: body.department || null,
+            position: body.position || null,
+            company_id: body.company_id,
+            role: body.role,
+            status: 'active', // Auto-activate admin-created users
+            is_active: true,
+            password: body.password, // Will be hashed by DB trigger
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
 
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: `Failed to create user profile: ${profileError.message}`,
-          }),
-          { status: 400, headers: corsHeaders }
-        );
+        if (profileError) {
+          // Try to clean up auth user if profile creation fails
+          console.error('Profile creation error:', profileError);
+          try {
+            await supabase.auth.admin.deleteUser(userId);
+          } catch (cleanupErr) {
+            console.error('Failed to cleanup auth user after profile creation error:', cleanupErr);
+          }
+
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: `Failed to create user profile: ${profileError.message}`,
+            }),
+            { status: 400, headers: corsHeaders }
+          );
+        }
       }
     } catch (err) {
       // Try to clean up auth user if profile creation fails
-      console.error('Error creating profile:', err);
+      console.error('Error creating/updating profile:', err);
       try {
         await supabase.auth.admin.deleteUser(userId);
       } catch (cleanupErr) {
