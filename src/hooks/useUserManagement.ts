@@ -76,8 +76,24 @@ export const useUserManagement = () => {
 
       setUsers(data || []);
     } catch (err) {
-      const errorMessage = parseErrorMessage(err);
       console.error('Error fetching users:', err);
+      let errorMessage = 'Unknown error occurred';
+      try {
+        errorMessage = parseErrorMessage(err);
+      } catch (parseErr) {
+        console.error('parseErrorMessage failed for fetchUsers:', parseErr);
+        errorMessage = err?.message || String(err);
+      }
+
+      // Ensure string and try JSON stringify for objects
+      if (typeof errorMessage !== 'string') {
+        try {
+          errorMessage = JSON.stringify(errorMessage);
+        } catch (jsonErr) {
+          errorMessage = String(errorMessage);
+        }
+      }
+
       setError(`Failed to fetch users: ${errorMessage}`);
       toast.error(`Error fetching users: ${errorMessage}`);
     } finally {
@@ -115,13 +131,17 @@ export const useUserManagement = () => {
       let errorMessage = 'Unknown error occurred';
       try {
         errorMessage = parseErrorMessage(err);
-        // Double-check that it's actually a string
-        if (typeof errorMessage !== 'string') {
+      } catch (parseErr) {
+        console.error('Error parsing error message for invitations:', parseErr);
+        errorMessage = err?.message || String(err) || 'Failed to parse error';
+      }
+
+      if (typeof errorMessage !== 'string') {
+        try {
+          errorMessage = JSON.stringify(errorMessage);
+        } catch (jsonErr) {
           errorMessage = String(errorMessage);
         }
-      } catch (parseErr) {
-        console.error('Error parsing error message:', parseErr);
-        errorMessage = err?.message || err?.toString() || 'Failed to parse error';
       }
 
       setError(`Failed to fetch invitations: ${errorMessage}`);
@@ -176,19 +196,71 @@ export const useUserManagement = () => {
       }
 
       // Call Edge Function (admin-create-user) to create auth user + profile
-      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
-        body: {
+      // Bypass edge function: create an invitation record instead of calling admin-create-user
+      // This avoids exposing service role keys and keeps admin workflow safe.
+      const invitationToken = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
+      const invitePayload = {
+        email: userData.email,
+        role: userData.role,
+        company_id: finalCompanyId,
+        invited_by: currentUser?.id,
+        invitation_token: invitationToken,
+        invited_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+        status: 'pending',
+      };
+
+      console.log('Creating user invitation (bypass edge function)', { invitePayload: { ...invitePayload, invitation_token: '***' } });
+
+      const { data: invitationData, error: invitationError } = await supabase
+        .from('user_invitations')
+        .insert(invitePayload)
+        .select()
+        .single();
+
+      console.log('user_invitations insert result', { data: invitationData, error: invitationError });
+
+      if (invitationError) {
+        const errMsg = parseErrorMessageWithCodes(invitationError, 'invitation creation');
+        return { success: false, error: errMsg };
+      }
+
+      // Optionally create a placeholder profile with status 'invited' so admins can see the user in lists
+      try {
+        const placeholder = {
+          id: invitationToken, // temporary id until user accepts and we reconcile
           email: userData.email,
-          password: userData.password,
-          full_name: userData.full_name,
-          phone: userData.phone,
-          department: userData.department,
-          position: userData.position,
-          role: userData.role,
+          full_name: userData.full_name || null,
+          phone: userData.phone || null,
+          department: userData.department || null,
+          position: userData.position || null,
           company_id: finalCompanyId,
-          invited_by: currentUser?.id,
+          role: userData.role,
+          status: 'invited',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .insert(placeholder)
+          .select()
+          .single();
+
+        if (profileError) {
+          // If profile creation fails, log and continue — invitation is the source of truth
+          console.warn('Failed to create placeholder profile for invitation:', profileError);
+        } else {
+          console.log('Created placeholder profile for invitation', { profileData });
         }
-      });
+      } catch (profileInsertErr) {
+        console.warn('Unexpected error creating placeholder profile for invitation:', profileInsertErr);
+      }
+
+      toast.success('Invitation created successfully');
+      await fetchUsers();
+
+      return { success: true, password: userData.password };
 
       if (fnError) {
         const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'user creation');

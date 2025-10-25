@@ -34,7 +34,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    const body: CreateUserRequest = await req.json();
+    const rawBody = await req.json();
+    const body: CreateUserRequest = rawBody;
+    // Mask password in logs
+    const safeBody = {
+      ...rawBody,
+      password: rawBody?.password ? '***' : null,
+    };
+    console.log('admin-create-user invoked', {
+      method: req.method,
+      url: (req as any).url || null,
+      body: safeBody,
+      auth_header_present: !!req.headers.get('authorization'),
+    });
 
     // Validate required fields
     if (!body.email || !body.password || !body.role || !body.company_id || !body.invited_by) {
@@ -71,8 +83,19 @@ Deno.serve(async (req) => {
     }
 
     // Create Supabase client with service role (for admin operations)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment:', {
+        SUPABASE_URL: !!supabaseUrl,
+        SUPABASE_SERVICE_ROLE_KEY: !!supabaseServiceKey,
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server configuration error: missing environment variables' }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -228,6 +251,7 @@ Deno.serve(async (req) => {
       console.warn('Failed to log user creation to audit trail:', auditErr);
     }
 
+    console.log('admin-create-user success', { user_id: userId, email: body.email, company_id: body.company_id });
     return new Response(
       JSON.stringify({
         success: true,
