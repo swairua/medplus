@@ -190,6 +190,8 @@ Deno.serve(async (req) => {
           company_id: body.company_id,
           role: body.role,
           status: 'active', // Auto-activate admin-created users
+          is_active: true,
+          password: body.password, // Will be hashed by DB trigger
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
