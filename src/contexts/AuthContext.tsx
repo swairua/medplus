@@ -151,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await supabase
         .from('profiles')
-        .update({ last_login: new Date().toISOString() })
+        .update({ last_login: new Date().toISOString(), is_active: true })
         .eq('id', userId);
     } catch (error) {
       logError('Error updating last login:', error, { userId, context: 'updateLastLogin' });
