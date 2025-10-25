@@ -149,7 +149,7 @@ export const useUserManagement = () => {
     }
   };
 
-  // Create a new user (admin only) - Admin sets password; no self signup/email verify
+  // Create a new user (admin only) - Admin sets password; no public signup/email verify
   const createUser = async (userData: CreateUserData): Promise<{ success: boolean; password?: string; error?: string }> => {
     if (!isAdmin) {
       return { success: false, error: 'Unauthorized: Only administrators can create users' };
@@ -195,94 +195,34 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
-      // Call Edge Function (admin-create-user) to create auth user + profile
-      // Bypass edge function: create an invitation record instead of calling admin-create-user
-      // This avoids exposing service role keys and keeps admin workflow safe.
-      const invitationToken = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
-      const invitePayload = {
-        email: userData.email,
-        role: userData.role,
-        company_id: finalCompanyId,
-        invited_by: currentUser?.id,
-        invitation_token: invitationToken,
-        invited_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
-        status: 'pending',
-      };
-
-      console.log('Creating user invitation (bypass edge function)', { invitePayload: { ...invitePayload, invitation_token: '***' } });
-
-      const { data: invitationData, error: invitationError } = await supabase
-        .from('user_invitations')
-        .insert(invitePayload)
-        .select()
-        .single();
-
-      console.log('user_invitations insert result', { data: invitationData, error: invitationError });
-
-      if (invitationError) {
-        const errMsg = parseErrorMessageWithCodes(invitationError, 'invitation creation');
-        return { success: false, error: errMsg };
-      }
-
-      // Optionally create a placeholder profile with status 'invited' so admins can see the user in lists
-      try {
-        const placeholder = {
-          id: invitationToken, // temporary id until user accepts and we reconcile
+      // Call Edge Function (admin-create-user) to create auth user + profile (service role)
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
+        body: {
           email: userData.email,
-          full_name: userData.full_name || null,
-          phone: userData.phone || null,
-          department: userData.department || null,
-          position: userData.position || null,
-          company_id: finalCompanyId,
+          password: userData.password,
+          full_name: userData.full_name,
           role: userData.role,
-          status: 'invited',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .insert(placeholder)
-          .select()
-          .single();
-
-        if (profileError) {
-          // If profile creation fails, log and continue — invitation is the source of truth
-          console.warn('Failed to create placeholder profile for invitation:', profileError);
-        } else {
-          console.log('Created placeholder profile for invitation', { profileData });
-        }
-      } catch (profileInsertErr) {
-        console.warn('Unexpected error creating placeholder profile for invitation:', profileInsertErr);
-      }
-
-      toast.success('Invitation created successfully');
-      await fetchUsers();
-
-      return { success: true, password: userData.password };
+          company_id: finalCompanyId,
+          invited_by: currentUser?.id,
+          phone: userData.phone,
+          department: userData.department,
+          position: userData.position,
+        },
+      });
 
       if (fnError) {
         const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'user creation');
         return { success: false, error: fnErrorMessage || 'Failed to create user' };
       }
 
-      // Check if response indicates error
-      if (fnData && !fnData.success) {
-        return { success: false, error: fnData.error || 'Failed to create user' };
-      }
-
-      if (!fnData || !fnData.user_id) {
-        return { success: false, error: 'Failed to create user - no user ID returned' };
+      if (!fnData || !fnData.success || !fnData.user_id) {
+        return { success: false, error: fnData?.error || 'Failed to create user' };
       }
 
       toast.success('User created successfully');
       await fetchUsers();
 
-      return {
-        success: true,
-        password: userData.password,
-      };
+      return { success: true, password: userData.password };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'user creation');
       console.error('Error creating user:', errorMessage, err);
