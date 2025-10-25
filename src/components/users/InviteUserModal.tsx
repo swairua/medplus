@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Mail, Send } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { UserRole } from '@/contexts/AuthContext';
 import { validateEmail } from '@/utils/validation';
 import { supabase } from '@/integrations/supabase/client';
