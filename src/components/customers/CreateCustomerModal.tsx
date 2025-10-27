@@ -58,8 +58,11 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
   const createCustomer = useCreateCustomer();
 
   const generateCustomerCode = () => {
-    const customerCount = customers?.length || 0;
-    return `CUST${(customerCount + 1).toString().padStart(3, '0')}`;
+    // Create a compact, very-low-collision code using timestamp + random chars.
+    // Format: CUST-<timestamp>-<4chars>
+    const ts = Date.now().toString(36);
+    const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `CUST-${ts}-${rand}`;
   };
 
   const handleSubmit = async () => {
