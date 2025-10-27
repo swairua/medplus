@@ -332,8 +332,19 @@ export const useCreateCustomer = () => {
     },
     onError: (error: any) => {
       console.error('Error creating customer (useCreateCustomer):', error);
-      const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
-      toast.error(`Failed to create customer: ${message}`);
+      try {
+        // dynamic import to avoid circular deps
+        import('@/lib/utils').then(({ formatError }) => {
+          const message = formatError(error);
+          toast.error(`Failed to create customer: ${message}`);
+        }).catch((_) => {
+          const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
+          toast.error(`Failed to create customer: ${message}`);
+        });
+      } catch (_e) {
+        const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
+        toast.error(`Failed to create customer: ${message}`);
+      }
     },
   });
 };
