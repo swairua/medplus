@@ -58,11 +58,8 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
   const createCustomer = useCreateCustomer();
 
   const generateCustomerCode = () => {
-    // Create a compact, very-low-collision code using timestamp + random chars.
-    // Format: CUST-<timestamp>-<4chars>
-    const ts = Date.now().toString(36);
-    const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-    return `CUST-${ts}-${rand}`;
+    // With DB-sequence in place customer codes will be assigned server-side.
+    return 'Will be assigned on save';
   };
 
   const handleSubmit = async () => {
