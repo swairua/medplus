@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Types
 export interface Company {
@@ -314,7 +315,7 @@ export const useCustomers = (companyId?: string) => {
 
 export const useCreateCustomer = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
@@ -322,12 +323,17 @@ export const useCreateCustomer = () => {
         .insert([customer])
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+    onError: (error: any) => {
+      console.error('Error creating customer (useCreateCustomer):', error);
+      const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
+      toast.error(`Failed to create customer: ${message}`);
     },
   });
 };
