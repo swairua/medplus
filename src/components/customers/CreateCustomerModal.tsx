@@ -99,9 +99,10 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
         payment_terms: 30,
         is_active: true,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating customer:', error);
-      toast.error('Failed to create customer. Please try again.');
+      const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
+      toast.error(`Failed to create customer: ${message}`);
     } finally {
       setIsSubmitting(false);
     }
