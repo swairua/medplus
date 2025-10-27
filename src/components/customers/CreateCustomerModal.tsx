@@ -75,18 +75,20 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
 
     setIsSubmitting(true);
     try {
-      const customerCode = generateCustomerCode();
-      
-      await createCustomer.mutateAsync({
+      // Send only the form data; customer_code and customer_number will be generated server-side by DB triggers/sequences.
+      const payload = {
         company_id: currentCompany.id,
-        customer_code: customerCode,
-        ...formData
-      });
-      
-      toast.success(`Customer ${formData.name} created successfully!`);
+        ...formData,
+      };
+
+      const created = await createCustomer.mutateAsync(payload);
+
+      const createdCode = created?.customer_code ?? created?.customer_number ? `CUST${String(created.customer_number).padStart(6, '0')}` : '';
+      toast.success(`Customer ${created?.name || formData.name} created successfully${createdCode ? ` (${createdCode})` : ''}!`);
+
       onSuccess();
       onOpenChange(false);
-      
+
       // Reset form
       setFormData({
         name: '',
