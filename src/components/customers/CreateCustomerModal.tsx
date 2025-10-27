@@ -58,8 +58,8 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
   const createCustomer = useCreateCustomer();
 
   const generateCustomerCode = () => {
-    const customerCount = customers?.length || 0;
-    return `CUST${(customerCount + 1).toString().padStart(3, '0')}`;
+    // With DB-sequence in place customer codes will be assigned server-side.
+    return 'Will be assigned on save';
   };
 
   const handleSubmit = async () => {
@@ -75,18 +75,20 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
 
     setIsSubmitting(true);
     try {
-      const customerCode = generateCustomerCode();
-      
-      await createCustomer.mutateAsync({
+      // Send only the form data; customer_code and customer_number will be generated server-side by DB triggers/sequences.
+      const payload = {
         company_id: currentCompany.id,
-        customer_code: customerCode,
-        ...formData
-      });
-      
-      toast.success(`Customer ${formData.name} created successfully!`);
+        ...formData,
+      };
+
+      const created = await createCustomer.mutateAsync(payload);
+
+      const createdCode = created?.customer_code ?? created?.customer_number ? `CUST${String(created.customer_number).padStart(6, '0')}` : '';
+      toast.success(`Customer ${created?.name || formData.name} created successfully${createdCode ? ` (${createdCode})` : ''}!`);
+
       onSuccess();
       onOpenChange(false);
-      
+
       // Reset form
       setFormData({
         name: '',
@@ -99,9 +101,17 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
         payment_terms: 30,
         is_active: true,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating customer:', error);
-      toast.error('Failed to create customer. Please try again.');
+      // Better formatting for Supabase errors
+      try {
+        const { formatError } = await import('@/lib/utils');
+        const message = formatError(error);
+        toast.error(`Failed to create customer: ${message}`);
+      } catch (e) {
+        const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
+        toast.error(`Failed to create customer: ${message}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
