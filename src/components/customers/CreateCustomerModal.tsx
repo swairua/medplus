@@ -103,8 +103,15 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
       });
     } catch (error: any) {
       console.error('Error creating customer:', error);
-      const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
-      toast.error(`Failed to create customer: ${message}`);
+      // Better formatting for Supabase errors
+      try {
+        const { formatError } = await import('@/lib/utils');
+        const message = formatError(error);
+        toast.error(`Failed to create customer: ${message}`);
+      } catch (e) {
+        const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
+        toast.error(`Failed to create customer: ${message}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
