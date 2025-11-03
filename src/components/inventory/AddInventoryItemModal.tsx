@@ -334,20 +334,35 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="unit_of_measure">Unit of Measure</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="unit_of_measure">Unit of Measure</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCreateUnit(true)}
+                      className="h-auto p-1 text-xs text-primary hover:text-primary/80"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Create New
+                    </Button>
+                  </div>
                   <Select value={formData.unit_of_measure} onValueChange={(value) => handleInputChange('unit_of_measure', value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pieces">Pieces</SelectItem>
-                      <SelectItem value="boxes">Boxes</SelectItem>
-                      <SelectItem value="bottles">Bottles</SelectItem>
-                      <SelectItem value="vials">Vials</SelectItem>
-                      <SelectItem value="packs">Packs</SelectItem>
-                      <SelectItem value="kits">Kits</SelectItem>
-                      <SelectItem value="liters">Liters</SelectItem>
-                      <SelectItem value="kg">Kilograms</SelectItem>
+                      {unitsLoading ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading units...</div>
+                      ) : unitsOfMeasure && unitsOfMeasure.length > 0 ? (
+                        unitsOfMeasure.map((unit) => (
+                          <SelectItem key={unit.id} value={unit.id}>
+                            {unit.name} ({unit.abbreviation})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No units available</div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
