@@ -476,9 +476,22 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                   </SelectContent>
                 </Select>
                 {paymentMethods.length === 0 && !methodsLoading && (
-                  <p className="text-sm text-muted-foreground">
-                    No payment methods found. Create one to get started.
-                  </p>
+                  <div className="bg-warning/10 border border-warning/20 rounded-lg p-3">
+                    <p className="text-sm text-warning font-medium">No payment methods found</p>
+                    <p className="text-xs text-warning/80 mt-1">
+                      The payment methods table may not be set up yet. Please run the database migration to create default payment methods. See PAYMENT_METHODS_SETUP.md for instructions.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCreateMethodDialog(true)}
+                      className="mt-2 text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Create First Payment Method
+                    </Button>
+                  </div>
                 )}
               </div>
 
