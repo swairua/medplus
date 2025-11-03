@@ -2300,3 +2300,92 @@ export const useCreateUnitOfMeasure = () => {
     },
   });
 };
+
+// Hook to fetch payment methods for a company
+export const usePaymentMethods = (companyId?: string) => {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: ['payment_methods', companyId],
+    queryFn: async () => {
+      if (!companyId) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching payment methods:', error);
+        throw error;
+      }
+
+      // If no payment methods exist, seed the defaults
+      if (!data || data.length === 0) {
+        try {
+          const { seedDefaultPaymentMethods } = await import('@/utils/setupDatabase');
+          const seedResult = await seedDefaultPaymentMethods(companyId);
+
+          if (seedResult.success) {
+            // Fetch again after seeding
+            const { data: seededData, error: seededError } = await supabase
+              .from('payment_methods')
+              .select('*')
+              .eq('company_id', companyId)
+              .eq('is_active', true)
+              .order('sort_order', { ascending: true });
+
+            if (seededError) {
+              console.warn('Warning: Could not seed default payment methods:', seededError);
+              return data || [];
+            }
+
+            return seededData as PaymentMethod[];
+          }
+        } catch (seedError) {
+          console.warn('Warning: Error seeding payment methods:', seedError);
+          return data || [];
+        }
+      }
+
+      return data as PaymentMethod[];
+    },
+    enabled: !!companyId,
+  });
+};
+
+export const useCreatePaymentMethod = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (method: Omit<PaymentMethod, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('Creating payment method:', method);
+
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .insert([method])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error creating payment method:', error);
+        const errorMsg = error.message || JSON.stringify(error);
+        throw new Error(`Failed to create payment method: ${errorMsg}`);
+      }
+
+      console.log('Payment method created successfully:', data);
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('Invalidating cache for company:', data.company_id);
+      queryClient.invalidateQueries({ queryKey: ['payment_methods', data.company_id] });
+    },
+    onError: (error) => {
+      console.error('Mutation error:', error);
+    },
+  });
+};
