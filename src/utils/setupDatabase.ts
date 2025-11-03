@@ -214,6 +214,9 @@ CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user
 CREATE INDEX IF NOT EXISTS idx_user_permissions_permission_name ON user_permissions(permission_name);
 CREATE INDEX IF NOT EXISTS idx_customers_company_id ON customers(company_id);
 CREATE INDEX IF NOT EXISTS idx_products_company_id ON products(company_id);
+CREATE INDEX IF NOT EXISTS idx_product_categories_company_id ON product_categories(company_id);
+CREATE INDEX IF NOT EXISTS idx_units_of_measure_company_id ON units_of_measure(company_id);
+CREATE INDEX IF NOT EXISTS idx_units_of_measure_is_active ON units_of_measure(is_active);
 CREATE INDEX IF NOT EXISTS idx_quotations_company_id ON quotations(company_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_company_id ON invoices(company_id);
 `;
