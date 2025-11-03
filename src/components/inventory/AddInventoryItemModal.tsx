@@ -492,6 +492,57 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
         onOpenChange={setShowCreateCategory}
         onSuccess={handleCategoryCreated}
       />
+
+      <Dialog open={showCreateUnit} onOpenChange={setShowCreateUnit}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Tag className="h-5 w-5 text-primary" />
+              <span>Create New Unit of Measure</span>
+            </DialogTitle>
+            <DialogDescription>
+              Add a new unit of measure to your inventory system
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new_unit_name">Unit Name *</Label>
+              <Input
+                id="new_unit_name"
+                value={newUnitName}
+                onChange={(e) => setNewUnitName(e.target.value)}
+                placeholder="e.g., Pallets, Drums, Bags"
+                disabled={isCreatingUnit}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_unit_abbr">Abbreviation *</Label>
+              <Input
+                id="new_unit_abbr"
+                value={newUnitAbbr}
+                onChange={(e) => setNewUnitAbbr(e.target.value)}
+                placeholder="e.g., pal, drm, bag"
+                disabled={isCreatingUnit}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateUnit(false)}
+              disabled={isCreatingUnit}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateUnit}
+              disabled={isCreatingUnit || !newUnitName.trim() || !newUnitAbbr.trim()}
+            >
+              {isCreatingUnit ? 'Creating...' : 'Create Unit'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
