@@ -114,6 +114,21 @@ CREATE TABLE IF NOT EXISTS units_of_measure (
     UNIQUE(company_id, name)
 );
 
+-- Payment Methods table
+CREATE TABLE IF NOT EXISTS payment_methods (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    code VARCHAR(50) NOT NULL,
+    description TEXT,
+    icon_name VARCHAR(50),
+    is_active BOOLEAN DEFAULT TRUE,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(company_id, name)
+);
+
 -- Products/Inventory table
 CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -217,6 +232,8 @@ CREATE INDEX IF NOT EXISTS idx_products_company_id ON products(company_id);
 CREATE INDEX IF NOT EXISTS idx_product_categories_company_id ON product_categories(company_id);
 CREATE INDEX IF NOT EXISTS idx_units_of_measure_company_id ON units_of_measure(company_id);
 CREATE INDEX IF NOT EXISTS idx_units_of_measure_is_active ON units_of_measure(is_active);
+CREATE INDEX IF NOT EXISTS idx_payment_methods_company_id ON payment_methods(company_id);
+CREATE INDEX IF NOT EXISTS idx_payment_methods_is_active ON payment_methods(is_active);
 CREATE INDEX IF NOT EXISTS idx_quotations_company_id ON quotations(company_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_company_id ON invoices(company_id);
 `;
@@ -307,7 +324,7 @@ export async function setupDatabase() {
 
     // Step 3: Verify tables exist
     console.log('🔍 Verifying table creation...');
-    const tablesToCheck = ['profiles', 'companies', 'customers', 'products', 'quotations', 'invoices'];
+    const tablesToCheck = ['profiles', 'companies', 'customers', 'products', 'quotations', 'invoices', 'units_of_measure', 'payment_methods'];
     let tablesExist = 0;
     
     for (const table of tablesToCheck) {
@@ -457,6 +474,60 @@ export async function seedDefaultUnitsOfMeasure(companyId: string) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in seedDefaultUnitsOfMeasure:', errorMessage);
+    return { success: false, error: errorMessage };
+  }
+}
+
+// Seed default payment methods for a company
+export async function seedDefaultPaymentMethods(companyId: string) {
+  const defaultMethods = [
+    { name: 'Cash', code: 'cash', icon_name: 'DollarSign', sort_order: 1 },
+    { name: 'Bank Transfer', code: 'bank_transfer', icon_name: 'CreditCard', sort_order: 2 },
+    { name: 'M-Pesa', code: 'mobile_money', icon_name: 'DollarSign', sort_order: 3 },
+    { name: 'EFT', code: 'eft', icon_name: 'CreditCard', sort_order: 4 },
+    { name: 'RTGS', code: 'rtgs', icon_name: 'CreditCard', sort_order: 5 },
+    { name: 'Cheque', code: 'cheque', icon_name: 'Receipt', sort_order: 6 },
+  ];
+
+  try {
+    // Check if payment methods already exist for this company
+    const { data: existingMethods, error: checkError } = await supabase
+      .from('payment_methods')
+      .select('id')
+      .eq('company_id', companyId)
+      .limit(1);
+
+    if (checkError) {
+      console.error('Error checking existing payment methods:', checkError);
+      return { success: false, error: checkError.message };
+    }
+
+    // Only seed if no payment methods exist
+    if (!existingMethods || existingMethods.length === 0) {
+      const methodsToInsert = defaultMethods.map(method => ({
+        company_id: companyId,
+        ...method,
+        is_active: true
+      }));
+
+      const { error: insertError } = await supabase
+        .from('payment_methods')
+        .insert(methodsToInsert);
+
+      if (insertError) {
+        console.error('Error seeding payment methods:', insertError);
+        return { success: false, error: insertError.message };
+      }
+
+      console.log('✅ Default payment methods seeded successfully');
+      return { success: true, methodsSeeded: defaultMethods.length };
+    } else {
+      console.log('ℹ️ Payment methods already exist for this company');
+      return { success: true, alreadyExists: true };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error in seedDefaultPaymentMethods:', errorMessage);
     return { success: false, error: errorMessage };
   }
 }

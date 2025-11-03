@@ -20,17 +20,18 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   DollarSign,
   CreditCard,
   Calendar,
   Receipt,
   User,
-  AlertTriangle
+  AlertTriangle,
+  Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
-import { useCreatePayment } from '@/hooks/useDatabase';
+import { useCreatePayment, usePaymentMethods, useCreatePaymentMethod } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { PaymentAllocationQuickFix } from './PaymentAllocationQuickFix';
@@ -47,13 +48,20 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     invoice_id: invoice?.id || '',
     amount: invoice?.balance_due || 0,
     payment_date: new Date().toISOString().split('T')[0],
-    payment_method: 'bank_transfer',
+    payment_method: '',
     reference_number: '',
     notes: '',
     customer_name: invoice?.customers?.name || ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allocationFailed, setAllocationFailed] = useState(false);
+  const [showCreateMethodDialog, setShowCreateMethodDialog] = useState(false);
+  const [newMethodData, setNewMethodData] = useState({
+    name: '',
+    code: '',
+    description: ''
+  });
+  const [isCreatingMethod, setIsCreatingMethod] = useState(false);
 
   // Reset allocation failed state when modal closes
   useEffect(() => {
@@ -66,6 +74,20 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
   const { currentCompany } = useCurrentCompany();
   const { data: invoices = [] } = useInvoices(currentCompany?.id);
   const createPaymentMutation = useCreatePayment();
+
+  // Fetch available payment methods
+  const { data: paymentMethods = [], isLoading: methodsLoading } = usePaymentMethods(currentCompany?.id);
+  const createPaymentMethodMutation = useCreatePaymentMethod();
+
+  // Set default payment method to first available
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !paymentData.payment_method) {
+      setPaymentData(prev => ({
+        ...prev,
+        payment_method: paymentMethods[0].code
+      }));
+    }
+  }, [paymentMethods]);
   
   // Include all invoices for manual payment adjustments (including fully paid ones)
   const availableInvoices = invoices.filter(inv =>
@@ -123,20 +145,6 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
       // Generate payment number
       const paymentNumber = `PAY-${Date.now()}`;
 
-      // Map UI payment method values to database enum values
-      const mapPaymentMethod = (method: string) => {
-        switch (method) {
-          case 'mpesa':
-            return 'mobile_money';
-          case 'eft':
-            return 'eft';
-          case 'rtgs':
-            return 'rtgs';
-          default:
-            return method;
-        }
-      };
-
       const paymentRecord = {
         company_id: selectedInvoice?.company_id || currentCompany.id,
         customer_id: selectedInvoice?.customer_id || null,
@@ -144,7 +152,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
         payment_number: paymentNumber,
         payment_date: paymentData.payment_date,
         amount: paymentData.amount,
-        payment_method: mapPaymentMethod(paymentData.payment_method),
+        payment_method: paymentData.payment_method,
         reference_number: paymentData.reference_number || paymentNumber,
         notes: paymentData.notes
       };
@@ -190,7 +198,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
       invoice_id: invoice?.id || '',
       amount: invoice?.balance_due || 0,
       payment_date: new Date().toISOString().split('T')[0],
-      payment_method: 'bank_transfer',
+      payment_method: paymentMethods.length > 0 ? paymentMethods[0].code : '',
       reference_number: '',
       notes: '',
       customer_name: invoice?.customers?.name || ''
@@ -198,20 +206,75 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     setAllocationFailed(false);
   };
 
-  const getMethodIcon = (method: string) => {
-    switch (method) {
-      case 'cash':
-        return <DollarSign className="h-4 w-4" />;
-      case 'bank_transfer':
+  const handleCreatePaymentMethod = async () => {
+    if (!newMethodData.name.trim()) {
+      toast.error('Payment method name is required');
+      return;
+    }
+
+    if (!newMethodData.code.trim()) {
+      toast.error('Payment method code is required');
+      return;
+    }
+
+    if (!currentCompany?.id) {
+      toast.error('Company not found');
+      return;
+    }
+
+    // Check if method with this name already exists
+    const existingMethod = paymentMethods?.find(
+      method => method.name.toLowerCase() === newMethodData.name.trim().toLowerCase()
+    );
+
+    if (existingMethod) {
+      handleInputChange('payment_method', existingMethod.code);
+      setNewMethodData({ name: '', code: '', description: '' });
+      setShowCreateMethodDialog(false);
+      toast.success(`Payment method "${existingMethod.name}" already exists and has been selected!`);
+      return;
+    }
+
+    setIsCreatingMethod(true);
+    try {
+      const newMethod = await createPaymentMethodMutation.mutateAsync({
+        company_id: currentCompany.id,
+        name: newMethodData.name,
+        code: newMethodData.code,
+        description: newMethodData.description || '',
+        is_active: true,
+        sort_order: (paymentMethods?.length || 0) + 1
+      });
+
+      handleInputChange('payment_method', newMethod.code);
+      setNewMethodData({ name: '', code: '', description: '' });
+      setShowCreateMethodDialog(false);
+      toast.success(`Payment method "${newMethod.name}" created successfully!`);
+    } catch (error) {
+      console.error('Error creating payment method:', error);
+      let errorMessage = 'Failed to create payment method';
+
+      if (error instanceof Error) {
+        if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+          errorMessage = `A payment method with the name "${newMethodData.name}" already exists for your company`;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsCreatingMethod(false);
+    }
+  };
+
+  const getMethodIcon = (iconName?: string) => {
+    switch (iconName) {
+      case 'CreditCard':
         return <CreditCard className="h-4 w-4" />;
-      case 'mpesa':
-        return <DollarSign className="h-4 w-4" />;
-      case 'cheque':
+      case 'Receipt':
         return <Receipt className="h-4 w-4" />;
-      case 'eft':
-        return <CreditCard className="h-4 w-4" />;
-      case 'rtgs':
-        return <CreditCard className="h-4 w-4" />;
+      case 'DollarSign':
       default:
         return <DollarSign className="h-4 w-4" />;
     }
@@ -384,50 +447,52 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
               {/* Payment Method */}
               <div className="space-y-2">
-                <Label htmlFor="payment_method">Payment Method *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="payment_method">Payment Method *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCreateMethodDialog(true)}
+                    className="h-auto p-1 text-xs text-primary hover:text-primary/80"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add New
+                  </Button>
+                </div>
                 <Select value={paymentData.payment_method} onValueChange={(value) => handleInputChange('payment_method', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
+                  <SelectTrigger disabled={methodsLoading}>
+                    <SelectValue placeholder={methodsLoading ? "Loading..." : "Select payment method"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4" />
-                        <span>Cash</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="bank_transfer">
-                      <div className="flex items-center space-x-2">
-                        <CreditCard className="h-4 w-4" />
-                        <span>Bank Transfer</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="mpesa">
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4" />
-                        <span>M-Pesa</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="eft">
-                      <div className="flex items-center space-x-2">
-                        <CreditCard className="h-4 w-4" />
-                        <span>EFT</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="rtgs">
-                      <div className="flex items-center space-x-2">
-                        <CreditCard className="h-4 w-4" />
-                        <span>RTGS</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="cheque">
-                      <div className="flex items-center space-x-2">
-                        <Receipt className="h-4 w-4" />
-                        <span>Cheque</span>
-                      </div>
-                    </SelectItem>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.id} value={method.code}>
+                        <div className="flex items-center space-x-2">
+                          {getMethodIcon(method.icon_name)}
+                          <span>{method.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {paymentMethods.length === 0 && !methodsLoading && (
+                  <div className="bg-warning/10 border border-warning/20 rounded-lg p-3">
+                    <p className="text-sm text-warning font-medium">No payment methods found</p>
+                    <p className="text-xs text-warning/80 mt-1">
+                      The payment methods table may not be set up yet. Please run the database migration to create default payment methods. See PAYMENT_METHODS_SETUP.md for instructions.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCreateMethodDialog(true)}
+                      className="mt-2 text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Create First Payment Method
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Reference Number */}
@@ -507,6 +572,74 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Create Payment Method Dialog */}
+      <Dialog open={showCreateMethodDialog} onOpenChange={setShowCreateMethodDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Plus className="h-5 w-5 text-primary" />
+              <span>Create New Payment Method</span>
+            </DialogTitle>
+            <DialogDescription>
+              Add a new payment method to your payment options
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="method_name">Method Name *</Label>
+              <Input
+                id="method_name"
+                placeholder="e.g., PayPal, Crypto, Wire Transfer"
+                value={newMethodData.name}
+                onChange={(e) => setNewMethodData(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="method_code">Code *</Label>
+              <Input
+                id="method_code"
+                placeholder="e.g., paypal, crypto, wire"
+                value={newMethodData.code}
+                onChange={(e) => setNewMethodData(prev => ({ ...prev, code: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Unique identifier for this payment method (lowercase, no spaces)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="method_description">Description</Label>
+              <Textarea
+                id="method_description"
+                placeholder="Optional description of this payment method..."
+                value={newMethodData.description}
+                onChange={(e) => setNewMethodData(prev => ({ ...prev, description: e.target.value }))}
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateMethodDialog(false)}
+              disabled={isCreatingMethod}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreatePaymentMethod}
+              disabled={isCreatingMethod || !newMethodData.name.trim() || !newMethodData.code.trim()}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {isCreatingMethod ? 'Creating...' : 'Create Method'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
