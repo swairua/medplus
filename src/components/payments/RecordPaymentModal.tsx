@@ -559,6 +559,74 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Create Payment Method Dialog */}
+      <Dialog open={showCreateMethodDialog} onOpenChange={setShowCreateMethodDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Plus className="h-5 w-5 text-primary" />
+              <span>Create New Payment Method</span>
+            </DialogTitle>
+            <DialogDescription>
+              Add a new payment method to your payment options
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="method_name">Method Name *</Label>
+              <Input
+                id="method_name"
+                placeholder="e.g., PayPal, Crypto, Wire Transfer"
+                value={newMethodData.name}
+                onChange={(e) => setNewMethodData(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="method_code">Code *</Label>
+              <Input
+                id="method_code"
+                placeholder="e.g., paypal, crypto, wire"
+                value={newMethodData.code}
+                onChange={(e) => setNewMethodData(prev => ({ ...prev, code: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Unique identifier for this payment method (lowercase, no spaces)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="method_description">Description</Label>
+              <Textarea
+                id="method_description"
+                placeholder="Optional description of this payment method..."
+                value={newMethodData.description}
+                onChange={(e) => setNewMethodData(prev => ({ ...prev, description: e.target.value }))}
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateMethodDialog(false)}
+              disabled={isCreatingMethod}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreatePaymentMethod}
+              disabled={isCreatingMethod || !newMethodData.name.trim() || !newMethodData.code.trim()}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {isCreatingMethod ? 'Creating...' : 'Create Method'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
