@@ -404,3 +404,59 @@ export async function getDatabaseStatus() {
   status.ready = status.tablesWorking >= 2; // At least profiles and companies
   return status;
 }
+
+// Seed default units of measure for a company
+export async function seedDefaultUnitsOfMeasure(companyId: string) {
+  const defaultUnits = [
+    { name: 'Pieces', abbreviation: 'pcs', sort_order: 1 },
+    { name: 'Boxes', abbreviation: 'box', sort_order: 2 },
+    { name: 'Bottles', abbreviation: 'bot', sort_order: 3 },
+    { name: 'Vials', abbreviation: 'vial', sort_order: 4 },
+    { name: 'Packs', abbreviation: 'pack', sort_order: 5 },
+    { name: 'Kits', abbreviation: 'kit', sort_order: 6 },
+    { name: 'Liters', abbreviation: 'L', sort_order: 7 },
+    { name: 'Kilograms', abbreviation: 'kg', sort_order: 8 },
+  ];
+
+  try {
+    // Check if units already exist for this company
+    const { data: existingUnits, error: checkError } = await supabase
+      .from('units_of_measure')
+      .select('id')
+      .eq('company_id', companyId)
+      .limit(1);
+
+    if (checkError) {
+      console.error('Error checking existing units:', checkError);
+      return { success: false, error: checkError.message };
+    }
+
+    // Only seed if no units exist
+    if (!existingUnits || existingUnits.length === 0) {
+      const unitsToInsert = defaultUnits.map(unit => ({
+        company_id: companyId,
+        ...unit,
+        is_active: true
+      }));
+
+      const { error: insertError } = await supabase
+        .from('units_of_measure')
+        .insert(unitsToInsert);
+
+      if (insertError) {
+        console.error('Error seeding units of measure:', insertError);
+        return { success: false, error: insertError.message };
+      }
+
+      console.log('✅ Default units of measure seeded successfully');
+      return { success: true, unitsSeeded: defaultUnits.length };
+    } else {
+      console.log('ℹ️ Units of measure already exist for this company');
+      return { success: true, alreadyExists: true };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error in seedDefaultUnitsOfMeasure:', errorMessage);
+    return { success: false, error: errorMessage };
+  }
+}
