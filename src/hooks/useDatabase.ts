@@ -2212,6 +2212,44 @@ export const useUnitsOfMeasure = (companyId?: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
+
+      // If no units exist, seed default units
+      if (!data || data.length === 0) {
+        try {
+          const defaultUnits = [
+            { name: 'Pieces', abbreviation: 'pcs', sort_order: 1 },
+            { name: 'Boxes', abbreviation: 'box', sort_order: 2 },
+            { name: 'Bottles', abbreviation: 'bot', sort_order: 3 },
+            { name: 'Vials', abbreviation: 'vial', sort_order: 4 },
+            { name: 'Packs', abbreviation: 'pack', sort_order: 5 },
+            { name: 'Kits', abbreviation: 'kit', sort_order: 6 },
+            { name: 'Liters', abbreviation: 'L', sort_order: 7 },
+            { name: 'Kilograms', abbreviation: 'kg', sort_order: 8 },
+          ];
+
+          const unitsToInsert = defaultUnits.map(unit => ({
+            company_id: companyId,
+            ...unit,
+            is_active: true
+          }));
+
+          const { data: seededData, error: seededError } = await supabase
+            .from('units_of_measure')
+            .insert(unitsToInsert)
+            .select();
+
+          if (seededError) {
+            console.warn('Warning: Could not seed default units of measure:', seededError);
+            return data || [];
+          }
+
+          return seededData as UnitOfMeasure[];
+        } catch (seedError) {
+          console.warn('Warning: Error seeding units of measure:', seedError);
+          return data || [];
+        }
+      }
+
       return data as UnitOfMeasure[];
     },
     enabled: !!companyId,
