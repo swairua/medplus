@@ -232,6 +232,8 @@ CREATE INDEX IF NOT EXISTS idx_products_company_id ON products(company_id);
 CREATE INDEX IF NOT EXISTS idx_product_categories_company_id ON product_categories(company_id);
 CREATE INDEX IF NOT EXISTS idx_units_of_measure_company_id ON units_of_measure(company_id);
 CREATE INDEX IF NOT EXISTS idx_units_of_measure_is_active ON units_of_measure(is_active);
+CREATE INDEX IF NOT EXISTS idx_payment_methods_company_id ON payment_methods(company_id);
+CREATE INDEX IF NOT EXISTS idx_payment_methods_is_active ON payment_methods(is_active);
 CREATE INDEX IF NOT EXISTS idx_quotations_company_id ON quotations(company_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_company_id ON invoices(company_id);
 `;
