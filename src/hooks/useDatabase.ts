@@ -289,7 +289,26 @@ export const useCreateCompany = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      try {
+        // Import and call seed functions for new company
+        const { seedDefaultUnitsOfMeasure, seedDefaultPaymentMethods } = await import('@/utils/setupDatabase');
+
+        // Seed default units of measure
+        const unitsResult = await seedDefaultUnitsOfMeasure(data.id);
+        if (!unitsResult.success) {
+          console.warn('Warning: Could not seed default units:', unitsResult.error);
+        }
+
+        // Seed default payment methods
+        const methodsResult = await seedDefaultPaymentMethods(data.id);
+        if (!methodsResult.success) {
+          console.warn('Warning: Could not seed default payment methods:', methodsResult.error);
+        }
+      } catch (seedError) {
+        console.warn('Warning: Error seeding data for new company:', seedError);
+      }
+
       queryClient.invalidateQueries({ queryKey: ['companies'] });
     },
   });
