@@ -8,11 +8,12 @@ import {
   XCircle,
   AlertTriangle,
   Database,
-  Loader2
+  Loader2,
+  RotateCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { setupPaymentSync } from '@/utils/setupPaymentSync';
+import { ManualFunctionSetupGuide } from './ManualFunctionSetupGuide';
 
 interface StatusCheck {
   name: string;
