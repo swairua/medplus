@@ -68,7 +68,13 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [showCreateUnit, setShowCreateUnit] = useState(false);
+  const [newUnitName, setNewUnitName] = useState('');
+  const [newUnitAbbr, setNewUnitAbbr] = useState('');
+  const [isCreatingUnit, setIsCreatingUnit] = useState(false);
   const updateProduct = useUpdateProduct();
+  const createUnitMutation = useCreateUnitOfMeasure();
+  const { currentCompany } = useCurrentCompany();
 
   // Fetch product categories
   const { data: categories, isLoading: categoriesLoading } = useQuery({
