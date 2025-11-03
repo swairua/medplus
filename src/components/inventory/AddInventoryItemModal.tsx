@@ -87,6 +87,16 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
   // Fetch units of measure
   const { data: unitsOfMeasure = [], isLoading: unitsLoading } = useUnitsOfMeasure(currentCompany?.id);
 
+  // Set default unit of measure to the first available unit
+  useEffect(() => {
+    if (unitsOfMeasure && unitsOfMeasure.length > 0 && !formData.unit_of_measure) {
+      setFormData(prev => ({
+        ...prev,
+        unit_of_measure: unitsOfMeasure[0].id
+      }));
+    }
+  }, [unitsOfMeasure]);
+
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
