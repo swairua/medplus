@@ -74,6 +74,20 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
   const { currentCompany } = useCurrentCompany();
   const { data: invoices = [] } = useInvoices(currentCompany?.id);
   const createPaymentMutation = useCreatePayment();
+
+  // Fetch available payment methods
+  const { data: paymentMethods = [], isLoading: methodsLoading } = usePaymentMethods(currentCompany?.id);
+  const createPaymentMethodMutation = useCreatePaymentMethod();
+
+  // Set default payment method to first available
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !paymentData.payment_method) {
+      setPaymentData(prev => ({
+        ...prev,
+        payment_method: paymentMethods[0].code
+      }));
+    }
+  }, [paymentMethods]);
   
   // Include all invoices for manual payment adjustments (including fully paid ones)
   const availableInvoices = invoices.filter(inv =>
