@@ -34,6 +34,7 @@ import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { useCreatePayment, usePaymentMethods, useCreatePaymentMethod } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { PaymentAllocationQuickFix } from './PaymentAllocationQuickFix';
 
 interface RecordPaymentModalProps {
   open: boolean;
@@ -47,13 +48,20 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     invoice_id: invoice?.id || '',
     amount: invoice?.balance_due || 0,
     payment_date: new Date().toISOString().split('T')[0],
-    payment_method: 'bank_transfer',
+    payment_method: '',
     reference_number: '',
     notes: '',
     customer_name: invoice?.customers?.name || ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allocationFailed, setAllocationFailed] = useState(false);
+  const [showCreateMethodDialog, setShowCreateMethodDialog] = useState(false);
+  const [newMethodData, setNewMethodData] = useState({
+    name: '',
+    code: '',
+    description: ''
+  });
+  const [isCreatingMethod, setIsCreatingMethod] = useState(false);
 
   // Reset allocation failed state when modal closes
   useEffect(() => {
