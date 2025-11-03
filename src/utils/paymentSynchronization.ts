@@ -217,11 +217,14 @@ export async function synchronizePayments(
         const newPaidAmount = (invoice.paid_amount || 0) + payment.amount;
         const newBalanceDue = invoice.total_amount - newPaidAmount;
         let newStatus = invoice.status;
-        
-        if (newBalanceDue <= 0) {
+
+        // Determine status based on balance and payment activity
+        if (newBalanceDue <= 0 && newPaidAmount !== 0) {
           newStatus = 'paid';
-        } else if (newPaidAmount > 0) {
+        } else if (newPaidAmount !== 0 && newBalanceDue > 0) {
           newStatus = 'partial';
+        } else if (newPaidAmount === 0) {
+          newStatus = 'draft';
         }
 
         const { error: invoiceError } = await supabase
