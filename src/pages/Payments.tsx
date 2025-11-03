@@ -444,6 +444,17 @@ export default function Payments() {
         onDownloadReceipt={handleDownloadReceipt}
         onSendReceipt={(payment) => toast.info(`Sending receipt for payment ${payment.payment_number}`)}
       />
+
+      {/* Delete Payment Modal */}
+      <DeletePaymentModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        payment={selectedPayment}
+        onSuccess={() => {
+          setShowDeleteModal(false);
+          setSelectedPayment(null);
+        }}
+      />
     </div>
   );
 }
