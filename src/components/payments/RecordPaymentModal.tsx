@@ -198,12 +198,74 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
       invoice_id: invoice?.id || '',
       amount: invoice?.balance_due || 0,
       payment_date: new Date().toISOString().split('T')[0],
-      payment_method: 'bank_transfer',
+      payment_method: paymentMethods.length > 0 ? paymentMethods[0].code : '',
       reference_number: '',
       notes: '',
       customer_name: invoice?.customers?.name || ''
     });
     setAllocationFailed(false);
+  };
+
+  const handleCreatePaymentMethod = async () => {
+    if (!newMethodData.name.trim()) {
+      toast.error('Payment method name is required');
+      return;
+    }
+
+    if (!newMethodData.code.trim()) {
+      toast.error('Payment method code is required');
+      return;
+    }
+
+    if (!currentCompany?.id) {
+      toast.error('Company not found');
+      return;
+    }
+
+    // Check if method with this name already exists
+    const existingMethod = paymentMethods?.find(
+      method => method.name.toLowerCase() === newMethodData.name.trim().toLowerCase()
+    );
+
+    if (existingMethod) {
+      handleInputChange('payment_method', existingMethod.code);
+      setNewMethodData({ name: '', code: '', description: '' });
+      setShowCreateMethodDialog(false);
+      toast.success(`Payment method "${existingMethod.name}" already exists and has been selected!`);
+      return;
+    }
+
+    setIsCreatingMethod(true);
+    try {
+      const newMethod = await createPaymentMethodMutation.mutateAsync({
+        company_id: currentCompany.id,
+        name: newMethodData.name,
+        code: newMethodData.code,
+        description: newMethodData.description || '',
+        is_active: true,
+        sort_order: (paymentMethods?.length || 0) + 1
+      });
+
+      handleInputChange('payment_method', newMethod.code);
+      setNewMethodData({ name: '', code: '', description: '' });
+      setShowCreateMethodDialog(false);
+      toast.success(`Payment method "${newMethod.name}" created successfully!`);
+    } catch (error) {
+      console.error('Error creating payment method:', error);
+      let errorMessage = 'Failed to create payment method';
+
+      if (error instanceof Error) {
+        if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+          errorMessage = `A payment method with the name "${newMethodData.name}" already exists for your company`;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsCreatingMethod(false);
+    }
   };
 
   const getMethodIcon = (method: string) => {
