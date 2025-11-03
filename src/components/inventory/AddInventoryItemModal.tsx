@@ -61,7 +61,12 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [showCreateUnit, setShowCreateUnit] = useState(false);
+  const [newUnitName, setNewUnitName] = useState('');
+  const [newUnitAbbr, setNewUnitAbbr] = useState('');
+  const [isCreatingUnit, setIsCreatingUnit] = useState(false);
   const createProduct = useCreateProduct();
+  const createUnitMutation = useCreateUnitOfMeasure();
   const { currentCompany } = useCurrentCompany();
 
   // Fetch product categories
@@ -78,6 +83,9 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
       return data as ProductCategory[];
     },
   });
+
+  // Fetch units of measure
+  const { data: unitsOfMeasure = [], isLoading: unitsLoading } = useUnitsOfMeasure(currentCompany?.id);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
