@@ -2261,17 +2261,29 @@ export const useCreateUnitOfMeasure = () => {
 
   return useMutation({
     mutationFn: async (unit: Omit<UnitOfMeasure, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('Creating unit of measure:', unit);
+
       const { data, error } = await supabase
         .from('units_of_measure')
         .insert([unit])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating unit:', error);
+        const errorMsg = error.message || JSON.stringify(error);
+        throw new Error(`Failed to create unit of measure: ${errorMsg}`);
+      }
+
+      console.log('Unit created successfully:', data);
       return data;
     },
     onSuccess: (data) => {
+      console.log('Invalidating cache for company:', data.company_id);
       queryClient.invalidateQueries({ queryKey: ['units_of_measure', data.company_id] });
+    },
+    onError: (error) => {
+      console.error('Mutation error:', error);
     },
   });
 };
