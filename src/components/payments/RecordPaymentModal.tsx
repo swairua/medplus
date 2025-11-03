@@ -268,20 +268,13 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     }
   };
 
-  const getMethodIcon = (method: string) => {
-    switch (method) {
-      case 'cash':
-        return <DollarSign className="h-4 w-4" />;
-      case 'bank_transfer':
+  const getMethodIcon = (iconName?: string) => {
+    switch (iconName) {
+      case 'CreditCard':
         return <CreditCard className="h-4 w-4" />;
-      case 'mpesa':
-        return <DollarSign className="h-4 w-4" />;
-      case 'cheque':
+      case 'Receipt':
         return <Receipt className="h-4 w-4" />;
-      case 'eft':
-        return <CreditCard className="h-4 w-4" />;
-      case 'rtgs':
-        return <CreditCard className="h-4 w-4" />;
+      case 'DollarSign':
       default:
         return <DollarSign className="h-4 w-4" />;
     }
