@@ -27,7 +27,9 @@ export function PaymentAllocationStatus() {
     { name: 'Database Function', status: 'checking' },
     { name: 'User Profile', status: 'checking' }
   ]);
-  const [isFixing, setIsFixing] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [showSetupGuide, setShowSetupGuide] = useState(false);
+  const [functionMissing, setFunctionMissing] = useState(false);
 
   const updateCheck = (index: number, updates: Partial<StatusCheck>) => {
     setChecks(prev => prev.map((check, i) =>
@@ -35,21 +37,42 @@ export function PaymentAllocationStatus() {
     ));
   };
 
-  const handleFixDatabaseFunction = async () => {
-    setIsFixing(true);
+  const handleRetryCheck = async () => {
+    setIsRetrying(true);
     try {
-      const result = await setupPaymentSync();
-      if (result.success) {
-        updateCheck(1, { status: 'working', details: 'Function available' });
-        toast.success('Database function created successfully!');
+      const { error } = await supabase.rpc('record_payment_with_allocation', {
+        p_company_id: '00000000-0000-0000-0000-000000000000',
+        p_customer_id: '00000000-0000-0000-0000-000000000000',
+        p_invoice_id: '00000000-0000-0000-0000-000000000000',
+        p_payment_number: 'TEST',
+        p_payment_date: '2024-01-01',
+        p_amount: 1,
+        p_payment_method: 'cash',
+        p_reference_number: 'TEST',
+        p_notes: 'TEST'
+      });
+
+      if (error) {
+        if (error.code === 'PGRST202' || error.message?.includes('function record_payment_with_allocation')) {
+          toast.error('Function still missing. Please run the SQL setup.');
+        } else if (error.message?.includes('Invoice not found')) {
+          updateCheck(1, { status: 'working', details: 'Function available' });
+          setFunctionMissing(false);
+          setShowSetupGuide(false);
+          toast.success('Database function is now working!');
+        } else {
+          toast.error('Function check failed');
+        }
       } else {
-        throw new Error(result.message);
+        updateCheck(1, { status: 'working', details: 'Function working' });
+        setFunctionMissing(false);
+        setShowSetupGuide(false);
+        toast.success('Database function is now working!');
       }
-    } catch (err: any) {
-      toast.error(`Failed to create database function: ${err.message}`);
-      updateCheck(1, { status: 'error', details: 'Function creation failed' });
+    } catch (err) {
+      toast.error('Error checking function status');
     } finally {
-      setIsFixing(false);
+      setIsRetrying(false);
     }
   };
 
