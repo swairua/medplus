@@ -2342,6 +2342,14 @@ export const usePaymentMethods = (companyId?: string) => {
         const errorMessage = error?.message || JSON.stringify(error);
         console.error('Error fetching payment methods:', errorMessage);
         console.error('Full error details:', error);
+
+        // Check if this is a "table doesn't exist" error
+        if (errorMessage.includes('does not exist') || errorMessage.includes('relation') || errorMessage.includes('not found')) {
+          console.warn('⚠️ payment_methods table does not exist. Please run the database migration.');
+          // Return empty array with a warning instead of throwing
+          return [];
+        }
+
         throw new Error(`Failed to fetch payment methods: ${errorMessage}`);
       }
 
