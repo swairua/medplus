@@ -471,7 +471,7 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_number VARCHAR(100) UNIQUE NOT NULL,
     payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
     amount DECIMAL(15,2) NOT NULL,
-    payment_method payment_method NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
     reference_number VARCHAR(255),
     notes TEXT,
     created_by UUID REFERENCES profiles(id),
