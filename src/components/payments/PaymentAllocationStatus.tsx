@@ -114,14 +114,20 @@ export function PaymentAllocationStatus() {
 
         if (error) {
           if (error.code === 'PGRST202' || error.message?.includes('function record_payment_with_allocation')) {
-            updateCheck(1, { status: 'error', details: 'Function missing - click to create' });
+            updateCheck(1, { status: 'error', details: 'Function missing - setup required' });
+            setFunctionMissing(true);
+            setShowSetupGuide(true);
           } else if (error.message?.includes('Invoice not found')) {
             updateCheck(1, { status: 'working', details: 'Function available' });
+            setFunctionMissing(false);
+            setShowSetupGuide(false);
           } else {
             updateCheck(1, { status: 'error', details: 'Function error' });
           }
         } else {
           updateCheck(1, { status: 'working', details: 'Function working' });
+          setFunctionMissing(false);
+          setShowSetupGuide(false);
         }
       } catch (err) {
         updateCheck(1, { status: 'error', details: 'Function test failed' });
