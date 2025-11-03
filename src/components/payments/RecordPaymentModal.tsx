@@ -20,20 +20,20 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   DollarSign,
   CreditCard,
   Calendar,
   Receipt,
   User,
-  AlertTriangle
+  AlertTriangle,
+  Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
-import { useCreatePayment } from '@/hooks/useDatabase';
+import { useCreatePayment, usePaymentMethods, useCreatePaymentMethod } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
-import { PaymentAllocationQuickFix } from './PaymentAllocationQuickFix';
 
 interface RecordPaymentModalProps {
   open: boolean;
