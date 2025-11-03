@@ -238,6 +238,12 @@ export function PaymentAllocationStatus() {
           ))}
         </div>
 
+        {showSetupGuide && (
+          <div className="mt-6 pt-6 border-t">
+            <ManualFunctionSetupGuide />
+          </div>
+        )}
+
         {allWorking && (
           <Alert className="border-success/20 bg-success-light">
             <CheckCircle className="h-4 w-4 text-success" />
@@ -249,7 +255,7 @@ export function PaymentAllocationStatus() {
           </Alert>
         )}
 
-        {hasErrors && (
+        {hasErrors && !functionMissing && (
           <Alert className="border-warning/20 bg-warning-light">
             <AlertTriangle className="h-4 w-4 text-warning" />
             <AlertDescription className="text-warning">
