@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
 import { ViewPaymentModal } from '@/components/payments/ViewPaymentModal';
+import { DeletePaymentModal } from '@/components/payments/DeletePaymentModal';
 import { PaymentAllocationStatus } from '@/components/payments/PaymentAllocationStatus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +24,8 @@ import {
   Eye,
   DollarSign,
   Download,
-  Lock
+  Lock,
+  Trash2
 } from 'lucide-react';
 import { usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
