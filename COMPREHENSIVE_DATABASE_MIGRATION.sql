@@ -38,12 +38,13 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
--- Payment method enumeration
-DO $$ BEGIN
-    CREATE TYPE payment_method AS ENUM ('cash', 'cheque', 'bank_transfer', 'mobile_money', 'credit_card', 'other');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+-- Payment method enumeration - DEPRECATED
+-- Now using VARCHAR to allow flexible payment method codes from payment_methods table
+-- DO $$ BEGIN
+--     CREATE TYPE payment_method AS ENUM ('cash', 'cheque', 'bank_transfer', 'mobile_money', 'credit_card', 'other');
+-- EXCEPTION
+--     WHEN duplicate_object THEN null;
+-- END $$;
 
 -- LPO status enumeration
 DO $$ BEGIN
