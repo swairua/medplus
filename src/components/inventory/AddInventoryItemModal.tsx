@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useCreateProduct } from '@/hooks/useDatabase';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useCreateProduct, useUnitsOfMeasure, useCreateUnitOfMeasure } from '@/hooks/useDatabase';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
@@ -61,7 +61,12 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [showCreateUnit, setShowCreateUnit] = useState(false);
+  const [newUnitName, setNewUnitName] = useState('');
+  const [newUnitAbbr, setNewUnitAbbr] = useState('');
+  const [isCreatingUnit, setIsCreatingUnit] = useState(false);
   const createProduct = useCreateProduct();
+  const createUnitMutation = useCreateUnitOfMeasure();
   const { currentCompany } = useCurrentCompany();
 
   // Fetch product categories
@@ -78,6 +83,19 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
       return data as ProductCategory[];
     },
   });
+
+  // Fetch units of measure
+  const { data: unitsOfMeasure = [], isLoading: unitsLoading } = useUnitsOfMeasure(currentCompany?.id);
+
+  // Set default unit of measure to the first available unit
+  useEffect(() => {
+    if (unitsOfMeasure && unitsOfMeasure.length > 0 && !formData.unit_of_measure) {
+      setFormData(prev => ({
+        ...prev,
+        unit_of_measure: unitsOfMeasure[0].id
+      }));
+    }
+  }, [unitsOfMeasure]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -167,13 +185,69 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
     setShowCreateCategory(false);
   };
 
+  const handleCreateUnit = async () => {
+    if (!newUnitName.trim()) {
+      toast.error('Unit name is required');
+      return;
+    }
+
+    if (!newUnitAbbr.trim()) {
+      toast.error('Unit abbreviation is required');
+      return;
+    }
+
+    if (!currentCompany?.id) {
+      toast.error('Company not found');
+      return;
+    }
+
+    setIsCreatingUnit(true);
+    try {
+      const newUnit = await createUnitMutation.mutateAsync({
+        company_id: currentCompany.id,
+        name: newUnitName,
+        abbreviation: newUnitAbbr,
+        is_active: true,
+        sort_order: (unitsOfMeasure?.length || 0) + 1
+      });
+
+      handleInputChange('unit_of_measure', newUnit.id);
+      setNewUnitName('');
+      setNewUnitAbbr('');
+      setShowCreateUnit(false);
+      toast.success(`Unit "${newUnitName}" created successfully!`);
+    } catch (error) {
+      console.error('Error creating unit of measure:', error);
+      let errorMessage = 'Failed to create unit of measure';
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object') {
+        const err = error as any;
+        if (err.message) {
+          errorMessage = err.message;
+        } else if (err.details) {
+          errorMessage = err.details;
+        } else if (err.hint) {
+          errorMessage = err.hint;
+        } else {
+          errorMessage = `Error: ${JSON.stringify(err)}`;
+        }
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsCreatingUnit(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
       product_code: '',
       description: '',
       category_id: '',
-      unit_of_measure: 'pieces',
+      unit_of_measure: '',
       cost_price: 0,
       selling_price: 0,
       stock_quantity: 0,
@@ -286,20 +360,35 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="unit_of_measure">Unit of Measure</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="unit_of_measure">Unit of Measure</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCreateUnit(true)}
+                      className="h-auto p-1 text-xs text-primary hover:text-primary/80"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Create New
+                    </Button>
+                  </div>
                   <Select value={formData.unit_of_measure} onValueChange={(value) => handleInputChange('unit_of_measure', value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pieces">Pieces</SelectItem>
-                      <SelectItem value="boxes">Boxes</SelectItem>
-                      <SelectItem value="bottles">Bottles</SelectItem>
-                      <SelectItem value="vials">Vials</SelectItem>
-                      <SelectItem value="packs">Packs</SelectItem>
-                      <SelectItem value="kits">Kits</SelectItem>
-                      <SelectItem value="liters">Liters</SelectItem>
-                      <SelectItem value="kg">Kilograms</SelectItem>
+                      {unitsLoading ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading units...</div>
+                      ) : unitsOfMeasure && unitsOfMeasure.length > 0 ? (
+                        unitsOfMeasure.map((unit) => (
+                          <SelectItem key={unit.id} value={unit.id}>
+                            {unit.name} ({unit.abbreviation})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No units available</div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -429,6 +518,57 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
         onOpenChange={setShowCreateCategory}
         onSuccess={handleCategoryCreated}
       />
+
+      <Dialog open={showCreateUnit} onOpenChange={setShowCreateUnit}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Tag className="h-5 w-5 text-primary" />
+              <span>Create New Unit of Measure</span>
+            </DialogTitle>
+            <DialogDescription>
+              Add a new unit of measure to your inventory system
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new_unit_name">Unit Name *</Label>
+              <Input
+                id="new_unit_name"
+                value={newUnitName}
+                onChange={(e) => setNewUnitName(e.target.value)}
+                placeholder="e.g., Pallets, Drums, Bags"
+                disabled={isCreatingUnit}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_unit_abbr">Abbreviation *</Label>
+              <Input
+                id="new_unit_abbr"
+                value={newUnitAbbr}
+                onChange={(e) => setNewUnitAbbr(e.target.value)}
+                placeholder="e.g., pal, drm, bag"
+                disabled={isCreatingUnit}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateUnit(false)}
+              disabled={isCreatingUnit}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateUnit}
+              disabled={isCreatingUnit || !newUnitName.trim() || !newUnitAbbr.trim()}
+            >
+              {isCreatingUnit ? 'Creating...' : 'Create Unit'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

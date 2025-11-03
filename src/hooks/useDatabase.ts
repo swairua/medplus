@@ -34,6 +34,18 @@ export interface TaxSetting {
   updated_at?: string;
 }
 
+export interface UnitOfMeasure {
+  id: string;
+  company_id: string;
+  name: string;
+  abbreviation: string;
+  description?: string;
+  is_active: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface StockMovement {
   id: string;
   company_id: string;
@@ -2179,6 +2191,99 @@ export const useUpdateLPOWithItems = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lpos'] });
       queryClient.invalidateQueries({ queryKey: ['lpo'] });
+    },
+  });
+};
+
+// Units of Measure hooks
+export const useUnitsOfMeasure = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['units_of_measure', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+
+      let query = supabase
+        .from('units_of_measure')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // If no units exist, seed default units
+      if (!data || data.length === 0) {
+        try {
+          const defaultUnits = [
+            { name: 'Pieces', abbreviation: 'pcs', sort_order: 1 },
+            { name: 'Boxes', abbreviation: 'box', sort_order: 2 },
+            { name: 'Bottles', abbreviation: 'bot', sort_order: 3 },
+            { name: 'Vials', abbreviation: 'vial', sort_order: 4 },
+            { name: 'Packs', abbreviation: 'pack', sort_order: 5 },
+            { name: 'Kits', abbreviation: 'kit', sort_order: 6 },
+            { name: 'Liters', abbreviation: 'L', sort_order: 7 },
+            { name: 'Kilograms', abbreviation: 'kg', sort_order: 8 },
+          ];
+
+          const unitsToInsert = defaultUnits.map(unit => ({
+            company_id: companyId,
+            ...unit,
+            is_active: true
+          }));
+
+          const { data: seededData, error: seededError } = await supabase
+            .from('units_of_measure')
+            .insert(unitsToInsert)
+            .select();
+
+          if (seededError) {
+            console.warn('Warning: Could not seed default units of measure:', seededError);
+            return data || [];
+          }
+
+          return seededData as UnitOfMeasure[];
+        } catch (seedError) {
+          console.warn('Warning: Error seeding units of measure:', seedError);
+          return data || [];
+        }
+      }
+
+      return data as UnitOfMeasure[];
+    },
+    enabled: !!companyId,
+  });
+};
+
+export const useCreateUnitOfMeasure = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (unit: Omit<UnitOfMeasure, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('Creating unit of measure:', unit);
+
+      const { data, error } = await supabase
+        .from('units_of_measure')
+        .insert([unit])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error creating unit:', error);
+        const errorMsg = error.message || JSON.stringify(error);
+        throw new Error(`Failed to create unit of measure: ${errorMsg}`);
+      }
+
+      console.log('Unit created successfully:', data);
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('Invalidating cache for company:', data.company_id);
+      queryClient.invalidateQueries({ queryKey: ['units_of_measure', data.company_id] });
+    },
+    onError: (error) => {
+      console.error('Mutation error:', error);
     },
   });
 };
