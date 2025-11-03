@@ -212,6 +212,21 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       return;
     }
 
+    // Check if unit with this name already exists
+    const existingUnit = unitsOfMeasure?.find(
+      unit => unit.name.toLowerCase() === newUnitName.trim().toLowerCase()
+    );
+
+    if (existingUnit) {
+      // Unit already exists, select it instead
+      handleInputChange('unit_of_measure', existingUnit.id);
+      setNewUnitName('');
+      setNewUnitAbbr('');
+      setShowCreateUnit(false);
+      toast.success(`Unit "${existingUnit.name}" already exists and has been selected!`);
+      return;
+    }
+
     setIsCreatingUnit(true);
     try {
       const newUnit = await createUnitMutation.mutateAsync({
@@ -226,17 +241,26 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       setNewUnitName('');
       setNewUnitAbbr('');
       setShowCreateUnit(false);
-      toast.success(`Unit "${newUnitName}" created successfully!`);
+      toast.success(`Unit "${newUnit.name}" created successfully!`);
     } catch (error) {
       console.error('Error creating unit of measure:', error);
       let errorMessage = 'Failed to create unit of measure';
 
       if (error instanceof Error) {
-        errorMessage = error.message;
+        // Handle specific database constraint errors
+        if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+          errorMessage = `A unit with the name "${newUnitName}" already exists for your company`;
+        } else {
+          errorMessage = error.message;
+        }
       } else if (error && typeof error === 'object') {
         const err = error as any;
         if (err.message) {
-          errorMessage = err.message;
+          if (err.message.includes('duplicate key') || err.message.includes('unique constraint')) {
+            errorMessage = `A unit with the name "${newUnitName}" already exists for your company`;
+          } else {
+            errorMessage = err.message;
+          }
         } else if (err.details) {
           errorMessage = err.details;
         } else if (err.hint) {
