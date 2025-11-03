@@ -36,7 +36,7 @@ interface Payment {
   customer_id: string;
   payment_date: string;
   amount: number;
-  payment_method: 'cash' | 'mpesa' | 'bank_transfer' | 'cheque';
+  payment_method: string;
   reference_number?: string;
   notes?: string;
   customers?: {
