@@ -115,6 +115,15 @@ export default function Payments() {
     setShowViewModal(true);
   };
 
+  const handleDeletePayment = (payment: Payment) => {
+    if (!canDeletePayment('delete_payment')) {
+      toast.error('You do not have permission to delete payments');
+      return;
+    }
+    setSelectedPayment(payment);
+    setShowDeleteModal(true);
+  };
+
   const handleDownloadReceipt = (payment: Payment) => {
     try {
       // Use the utility function with company details
