@@ -1244,10 +1244,13 @@ export const useDeletePayment = () => {
             const newBalanceDue = invoice.total_amount - newPaidAmount;
             let newStatus = 'draft';
 
-            if (newPaidAmount >= invoice.total_amount) {
+            // Determine status based on balance and payment activity
+            if (newBalanceDue <= 0 && newPaidAmount !== 0) {
               newStatus = 'paid';
-            } else if (newPaidAmount > 0) {
+            } else if (newPaidAmount !== 0 && newBalanceDue > 0) {
               newStatus = 'partial';
+            } else {
+              newStatus = 'draft';
             }
 
             // Update invoice
