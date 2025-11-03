@@ -49,6 +49,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     amount: invoice?.balance_due || 0,
     payment_date: new Date().toISOString().split('T')[0],
     payment_method: '',
+    payment_method_name: '',
     reference_number: '',
     notes: '',
     customer_name: invoice?.customers?.name || ''
