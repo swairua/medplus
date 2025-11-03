@@ -240,9 +240,6 @@ CREATE TABLE delivery_note_items (
     sort_order INTEGER DEFAULT 0
 );
 
--- Payment methods enum
-CREATE TYPE payment_method AS ENUM ('cash', 'cheque', 'bank_transfer', 'mobile_money', 'credit_card', 'other');
-
 -- Payments table
 CREATE TABLE payments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -251,7 +248,7 @@ CREATE TABLE payments (
     payment_number VARCHAR(100) UNIQUE NOT NULL,
     payment_date DATE NOT NULL,
     amount DECIMAL(15,2) NOT NULL,
-    payment_method payment_method NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
     reference_number VARCHAR(255),
     notes TEXT,
     created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
