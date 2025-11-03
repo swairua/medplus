@@ -296,16 +296,17 @@ export async function recalculateAllInvoiceBalances(): Promise<{ updated: number
 
     for (const invoice of invoices || []) {
       const totalAllocated = invoice.payment_allocations?.reduce(
-        (sum: number, alloc: any) => sum + (alloc.amount_allocated || 0), 
+        (sum: number, alloc: any) => sum + (alloc.amount_allocated || 0),
         0
       ) || 0;
 
       const newBalanceDue = invoice.total_amount - totalAllocated;
       let newStatus = invoice.status;
 
-      if (newBalanceDue <= 0 && totalAllocated > 0) {
+      // Determine status based on balance and payment activity
+      if (newBalanceDue <= 0 && totalAllocated !== 0) {
         newStatus = 'paid';
-      } else if (totalAllocated > 0) {
+      } else if (totalAllocated !== 0 && newBalanceDue > 0) {
         newStatus = 'partial';
       } else {
         newStatus = 'draft';
