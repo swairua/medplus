@@ -191,6 +191,18 @@ export function PaymentAllocationStatus() {
                 {check.details && (
                   <p className="text-xs text-muted-foreground">{check.details}</p>
                 )}
+                {index === 1 && check.status === 'error' && check.details?.includes('missing') && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleFixDatabaseFunction}
+                    disabled={isFixing}
+                    className="mt-2 text-xs h-7"
+                  >
+                    {isFixing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
+                    {isFixing ? 'Creating...' : 'Create Function'}
+                  </Button>
+                )}
               </div>
             </div>
           ))}
