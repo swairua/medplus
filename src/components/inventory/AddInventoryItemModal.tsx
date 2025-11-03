@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useCreateProduct } from '@/hooks/useDatabase';
-import { useQuery } from '@tanstack/react-query';
+import { useCreateProduct, useUnitsOfMeasure, useCreateUnitOfMeasure } from '@/hooks/useDatabase';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
