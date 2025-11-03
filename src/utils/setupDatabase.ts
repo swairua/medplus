@@ -324,7 +324,7 @@ export async function setupDatabase() {
 
     // Step 3: Verify tables exist
     console.log('🔍 Verifying table creation...');
-    const tablesToCheck = ['profiles', 'companies', 'customers', 'products', 'quotations', 'invoices'];
+    const tablesToCheck = ['profiles', 'companies', 'customers', 'products', 'quotations', 'invoices', 'units_of_measure', 'payment_methods'];
     let tablesExist = 0;
     
     for (const table of tablesToCheck) {
