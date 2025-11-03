@@ -1153,7 +1153,15 @@ export const useCreatePayment = () => {
             .eq('id', invoice_id);
 
           if (invoiceError) {
-            console.error('Failed to update invoice balance:', invoiceError);
+            const errorMessage = invoiceError?.message || JSON.stringify(invoiceError);
+            console.error('Failed to update invoice balance:', errorMessage);
+            console.error('Invoice update error details:', {
+              message: invoiceError?.message,
+              code: invoiceError?.code,
+              details: invoiceError?.details,
+              hint: invoiceError?.hint,
+              status: invoiceError?.status
+            });
             // Continue anyway - payment and allocation were recorded
           }
         }
