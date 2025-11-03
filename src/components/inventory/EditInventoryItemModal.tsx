@@ -23,8 +23,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Package, Edit, Plus } from 'lucide-react';
+import { Package, Edit, Plus, Tag } from 'lucide-react';
 import { CreateCategoryModalBasic } from '@/components/categories/CreateCategoryModalBasic';
+import { Textarea } from '@/components/ui/textarea';
 
 interface InventoryItem {
   id?: string;
