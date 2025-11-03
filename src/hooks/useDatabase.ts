@@ -46,6 +46,19 @@ export interface UnitOfMeasure {
   updated_at?: string;
 }
 
+export interface PaymentMethod {
+  id: string;
+  company_id: string;
+  name: string;
+  code: string;
+  description?: string;
+  icon_name?: string;
+  is_active: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface StockMovement {
   id: string;
   company_id: string;
