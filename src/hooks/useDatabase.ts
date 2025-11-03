@@ -2194,3 +2194,46 @@ export const useUpdateLPOWithItems = () => {
     },
   });
 };
+
+// Units of Measure hooks
+export const useUnitsOfMeasure = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['units_of_measure', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+
+      let query = supabase
+        .from('units_of_measure')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data as UnitOfMeasure[];
+    },
+    enabled: !!companyId,
+  });
+};
+
+export const useCreateUnitOfMeasure = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (unit: Omit<UnitOfMeasure, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('units_of_measure')
+        .insert([unit])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['units_of_measure', data.company_id] });
+    },
+  });
+};
