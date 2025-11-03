@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
 import { ViewPaymentModal } from '@/components/payments/ViewPaymentModal';
+import { DeletePaymentModal } from '@/components/payments/DeletePaymentModal';
 import { PaymentAllocationStatus } from '@/components/payments/PaymentAllocationStatus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +24,8 @@ import {
   Eye,
   DollarSign,
   Download,
-  Lock
+  Lock,
+  Trash2
 } from 'lucide-react';
 import { usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
@@ -36,7 +38,7 @@ interface Payment {
   customer_id: string;
   payment_date: string;
   amount: number;
-  payment_method: 'cash' | 'mpesa' | 'bank_transfer' | 'cheque';
+  payment_method: string;
   reference_number?: string;
   notes?: string;
   customers?: {
@@ -83,6 +85,7 @@ export default function Payments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
   // Fetch live payments data and company details
@@ -110,6 +113,15 @@ export default function Payments() {
     // Payment data is already in the correct format from the database
     setSelectedPayment(payment);
     setShowViewModal(true);
+  };
+
+  const handleDeletePayment = (payment: Payment) => {
+    if (!canDeletePayment('delete_payment')) {
+      toast.error('You do not have permission to delete payments');
+      return;
+    }
+    setSelectedPayment(payment);
+    setShowDeleteModal(true);
   };
 
   const handleDownloadReceipt = (payment: Payment) => {
@@ -391,6 +403,16 @@ export default function Payments() {
                         >
                           <Download className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeletePayment(payment)}
+                          title="Delete payment"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={!canDeletePayment('delete_payment')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -421,6 +443,17 @@ export default function Payments() {
         payment={selectedPayment}
         onDownloadReceipt={handleDownloadReceipt}
         onSendReceipt={(payment) => toast.info(`Sending receipt for payment ${payment.payment_number}`)}
+      />
+
+      {/* Delete Payment Modal */}
+      <DeletePaymentModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        payment={selectedPayment}
+        onSuccess={() => {
+          setShowDeleteModal(false);
+          setSelectedPayment(null);
+        }}
       />
     </div>
   );
