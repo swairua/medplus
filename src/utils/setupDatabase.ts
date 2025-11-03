@@ -477,3 +477,57 @@ export async function seedDefaultUnitsOfMeasure(companyId: string) {
     return { success: false, error: errorMessage };
   }
 }
+
+// Seed default payment methods for a company
+export async function seedDefaultPaymentMethods(companyId: string) {
+  const defaultMethods = [
+    { name: 'Cash', code: 'cash', icon_name: 'DollarSign', sort_order: 1 },
+    { name: 'Bank Transfer', code: 'bank_transfer', icon_name: 'CreditCard', sort_order: 2 },
+    { name: 'M-Pesa', code: 'mobile_money', icon_name: 'DollarSign', sort_order: 3 },
+    { name: 'EFT', code: 'eft', icon_name: 'CreditCard', sort_order: 4 },
+    { name: 'RTGS', code: 'rtgs', icon_name: 'CreditCard', sort_order: 5 },
+    { name: 'Cheque', code: 'cheque', icon_name: 'Receipt', sort_order: 6 },
+  ];
+
+  try {
+    // Check if payment methods already exist for this company
+    const { data: existingMethods, error: checkError } = await supabase
+      .from('payment_methods')
+      .select('id')
+      .eq('company_id', companyId)
+      .limit(1);
+
+    if (checkError) {
+      console.error('Error checking existing payment methods:', checkError);
+      return { success: false, error: checkError.message };
+    }
+
+    // Only seed if no payment methods exist
+    if (!existingMethods || existingMethods.length === 0) {
+      const methodsToInsert = defaultMethods.map(method => ({
+        company_id: companyId,
+        ...method,
+        is_active: true
+      }));
+
+      const { error: insertError } = await supabase
+        .from('payment_methods')
+        .insert(methodsToInsert);
+
+      if (insertError) {
+        console.error('Error seeding payment methods:', insertError);
+        return { success: false, error: insertError.message };
+      }
+
+      console.log('✅ Default payment methods seeded successfully');
+      return { success: true, methodsSeeded: defaultMethods.length };
+    } else {
+      console.log('ℹ️ Payment methods already exist for this company');
+      return { success: true, alreadyExists: true };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error in seedDefaultPaymentMethods:', errorMessage);
+    return { success: false, error: errorMessage };
+  }
+}
