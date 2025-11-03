@@ -231,7 +231,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
       product_code: '',
       description: '',
       category_id: '',
-      unit_of_measure: 'pieces',
+      unit_of_measure: '',
       cost_price: 0,
       selling_price: 0,
       stock_quantity: 0,
