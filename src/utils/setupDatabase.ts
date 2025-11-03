@@ -114,6 +114,21 @@ CREATE TABLE IF NOT EXISTS units_of_measure (
     UNIQUE(company_id, name)
 );
 
+-- Payment Methods table
+CREATE TABLE IF NOT EXISTS payment_methods (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    code VARCHAR(50) NOT NULL,
+    description TEXT,
+    icon_name VARCHAR(50),
+    is_active BOOLEAN DEFAULT TRUE,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(company_id, name)
+);
+
 -- Products/Inventory table
 CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
