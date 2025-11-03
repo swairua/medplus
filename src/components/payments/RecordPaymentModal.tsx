@@ -447,50 +447,39 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
               {/* Payment Method */}
               <div className="space-y-2">
-                <Label htmlFor="payment_method">Payment Method *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="payment_method">Payment Method *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCreateMethodDialog(true)}
+                    className="h-auto p-1 text-xs text-primary hover:text-primary/80"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add New
+                  </Button>
+                </div>
                 <Select value={paymentData.payment_method} onValueChange={(value) => handleInputChange('payment_method', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
+                  <SelectTrigger disabled={methodsLoading}>
+                    <SelectValue placeholder={methodsLoading ? "Loading..." : "Select payment method"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4" />
-                        <span>Cash</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="bank_transfer">
-                      <div className="flex items-center space-x-2">
-                        <CreditCard className="h-4 w-4" />
-                        <span>Bank Transfer</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="mpesa">
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4" />
-                        <span>M-Pesa</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="eft">
-                      <div className="flex items-center space-x-2">
-                        <CreditCard className="h-4 w-4" />
-                        <span>EFT</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="rtgs">
-                      <div className="flex items-center space-x-2">
-                        <CreditCard className="h-4 w-4" />
-                        <span>RTGS</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="cheque">
-                      <div className="flex items-center space-x-2">
-                        <Receipt className="h-4 w-4" />
-                        <span>Cheque</span>
-                      </div>
-                    </SelectItem>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.id} value={method.code}>
+                        <div className="flex items-center space-x-2">
+                          {getMethodIcon(method.icon_name)}
+                          <span>{method.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {paymentMethods.length === 0 && !methodsLoading && (
+                  <p className="text-sm text-muted-foreground">
+                    No payment methods found. Create one to get started.
+                  </p>
+                )}
               </div>
 
               {/* Reference Number */}
