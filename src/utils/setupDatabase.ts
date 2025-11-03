@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS quotation_items (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Invoices table  
+-- Invoices table
 CREATE TABLE IF NOT EXISTS invoices (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
@@ -196,8 +196,8 @@ CREATE TABLE IF NOT EXISTS invoices (
     tax_percentage DECIMAL(5,2) DEFAULT 0,
     tax_amount DECIMAL(15,2) DEFAULT 0,
     total_amount DECIMAL(15,2) DEFAULT 0,
-    amount_paid DECIMAL(15,2) DEFAULT 0,
-    amount_due DECIMAL(15,2) DEFAULT 0,
+    paid_amount DECIMAL(15,2) DEFAULT 0,
+    balance_due DECIMAL(15,2) DEFAULT 0,
     status VARCHAR(50) DEFAULT 'draft',
     notes TEXT,
     terms_and_conditions TEXT,
