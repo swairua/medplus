@@ -217,11 +217,14 @@ export async function synchronizePayments(
         const newPaidAmount = (invoice.paid_amount || 0) + payment.amount;
         const newBalanceDue = invoice.total_amount - newPaidAmount;
         let newStatus = invoice.status;
-        
-        if (newBalanceDue <= 0) {
+
+        // Determine status based on balance and payment activity
+        if (newBalanceDue <= 0 && newPaidAmount !== 0) {
           newStatus = 'paid';
-        } else if (newPaidAmount > 0) {
+        } else if (newPaidAmount !== 0 && newBalanceDue > 0) {
           newStatus = 'partial';
+        } else if (newPaidAmount === 0) {
+          newStatus = 'draft';
         }
 
         const { error: invoiceError } = await supabase
@@ -293,16 +296,17 @@ export async function recalculateAllInvoiceBalances(): Promise<{ updated: number
 
     for (const invoice of invoices || []) {
       const totalAllocated = invoice.payment_allocations?.reduce(
-        (sum: number, alloc: any) => sum + (alloc.amount_allocated || 0), 
+        (sum: number, alloc: any) => sum + (alloc.amount_allocated || 0),
         0
       ) || 0;
 
       const newBalanceDue = invoice.total_amount - totalAllocated;
       let newStatus = invoice.status;
 
-      if (newBalanceDue <= 0 && totalAllocated > 0) {
+      // Determine status based on balance and payment activity
+      if (newBalanceDue <= 0 && totalAllocated !== 0) {
         newStatus = 'paid';
-      } else if (totalAllocated > 0) {
+      } else if (totalAllocated !== 0 && newBalanceDue > 0) {
         newStatus = 'partial';
       } else {
         newStatus = 'draft';

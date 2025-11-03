@@ -125,9 +125,15 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     const selectedInvoice = availableInvoices.find(inv => inv.id === paymentData.invoice_id);
     const currentBalance = selectedInvoice?.balance_due || (selectedInvoice?.total_amount || 0) - (selectedInvoice?.paid_amount || 0);
 
-    // Allow manual adjustments: warn about overpayments but don't prevent them
+    // Warn about overpayments but allow them for flexibility
     if (paymentData.amount > currentBalance && currentBalance > 0) {
-      console.warn(`Payment amount (${paymentData.amount}) exceeds outstanding balance (${currentBalance}) - this will create an overpayment`);
+      const overpaymentAmount = paymentData.amount - currentBalance;
+      const confirmOverpayment = window.confirm(
+        `Warning: Payment amount (${formatCurrency(paymentData.amount)}) exceeds outstanding balance (${formatCurrency(currentBalance)}).\n\nThis will create an overpayment of ${formatCurrency(overpaymentAmount)}.\n\nContinue?`
+      );
+      if (!confirmOverpayment) {
+        return;
+      }
     }
 
     if (!paymentData.payment_method) {

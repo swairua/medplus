@@ -289,6 +289,12 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       return;
     }
 
+    // Validate invoice total amount (prevent zero-amount invoices)
+    if (totalAmount <= 0) {
+      toast.error('Invoice total must be greater than 0. Please add items or adjust prices.');
+      return;
+    }
+
     // Validate required fields
     if (!currentCompany?.id) {
       toast.error('No company selected. Please ensure you are associated with a company.');
