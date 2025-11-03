@@ -229,7 +229,23 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       toast.success(`Unit "${newUnitName}" created successfully!`);
     } catch (error) {
       console.error('Error creating unit of measure:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create unit of measure';
+      let errorMessage = 'Failed to create unit of measure';
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object') {
+        const err = error as any;
+        if (err.message) {
+          errorMessage = err.message;
+        } else if (err.details) {
+          errorMessage = err.details;
+        } else if (err.hint) {
+          errorMessage = err.hint;
+        } else {
+          errorMessage = `Error: ${JSON.stringify(err)}`;
+        }
+      }
+
       toast.error(errorMessage);
     } finally {
       setIsCreatingUnit(false);
