@@ -1199,6 +1199,107 @@ export const useCreatePayment = () => {
   });
 };
 
+// Hook to delete a payment and reverse invoice updates
+export const useDeletePayment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (paymentId: string) => {
+      // 1. Fetch payment details including allocations
+      const { data: payment, error: fetchPaymentError } = await supabase
+        .from('payments')
+        .select(`
+          *,
+          payment_allocations (
+            id,
+            invoice_id,
+            amount_allocated
+          )
+        `)
+        .eq('id', paymentId)
+        .single();
+
+      if (fetchPaymentError) throw fetchPaymentError;
+      if (!payment) throw new Error('Payment not found');
+
+      // 2. For each allocation, reverse the invoice balance updates
+      if (payment.payment_allocations && payment.payment_allocations.length > 0) {
+        for (const allocation of payment.payment_allocations) {
+          // Fetch current invoice state
+          const { data: invoice, error: fetchInvoiceError } = await supabase
+            .from('invoices')
+            .select('id, total_amount, paid_amount, balance_due, status')
+            .eq('id', allocation.invoice_id)
+            .single();
+
+          if (!fetchInvoiceError && invoice) {
+            // Calculate new amounts after reversing the payment
+            const newPaidAmount = Math.max(0, (invoice.paid_amount || 0) - allocation.amount_allocated);
+            const newBalanceDue = invoice.total_amount - newPaidAmount;
+            let newStatus = 'draft';
+
+            if (newPaidAmount >= invoice.total_amount) {
+              newStatus = 'paid';
+            } else if (newPaidAmount > 0) {
+              newStatus = 'partial';
+            }
+
+            // Update invoice
+            const { error: updateInvoiceError } = await supabase
+              .from('invoices')
+              .update({
+                paid_amount: newPaidAmount,
+                balance_due: newBalanceDue,
+                status: newStatus,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', allocation.invoice_id);
+
+            if (updateInvoiceError) {
+              console.error(`Failed to update invoice ${allocation.invoice_id}:`, updateInvoiceError);
+              throw new Error(`Failed to update invoice balance: ${updateInvoiceError.message}`);
+            }
+          }
+
+          // Delete the allocation
+          const { error: deleteAllocationError } = await supabase
+            .from('payment_allocations')
+            .delete()
+            .eq('id', allocation.id);
+
+          if (deleteAllocationError) {
+            console.error('Failed to delete allocation:', deleteAllocationError);
+            throw new Error(`Failed to delete payment allocation: ${deleteAllocationError.message}`);
+          }
+        }
+      }
+
+      // 3. Delete the payment
+      const { error: deletePaymentError } = await supabase
+        .from('payments')
+        .delete()
+        .eq('id', paymentId);
+
+      if (deletePaymentError) throw deletePaymentError;
+
+      return {
+        success: true,
+        payment_id: paymentId,
+        invoices_updated: payment.payment_allocations?.length || 0
+      };
+    },
+    onSuccess: (result) => {
+      // Invalidate all relevant cache keys
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['customer_invoices'] });
+    },
+    onError: (error) => {
+      console.error('Delete payment mutation error:', error);
+    }
+  });
+};
+
 // Remittance Advice hooks
 export const useRemittanceAdvice = (companyId?: string) => {
   return useQuery({
