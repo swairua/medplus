@@ -34,6 +34,18 @@ export interface TaxSetting {
   updated_at?: string;
 }
 
+export interface UnitOfMeasure {
+  id: string;
+  company_id: string;
+  name: string;
+  abbreviation: string;
+  description?: string;
+  is_active: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface StockMovement {
   id: string;
   company_id: string;
