@@ -91,6 +91,9 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     },
   });
 
+  // Fetch units of measure
+  const { data: unitsOfMeasure = [], isLoading: unitsLoading } = useUnitsOfMeasure(currentCompany?.id);
+
   // Populate form with existing item data when modal opens
   useEffect(() => {
     if (item && open) {
