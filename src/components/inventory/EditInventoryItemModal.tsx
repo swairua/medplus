@@ -340,21 +340,35 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="unit_of_measure">Unit of Measure</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="unit_of_measure">Unit of Measure</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCreateUnit(true)}
+                  className="h-auto p-1 text-xs text-primary hover:text-primary/80"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Create New
+                </Button>
+              </div>
               <Select value={formData.unit_of_measure} onValueChange={(value) => handleInputChange('unit_of_measure', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select unit" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pieces">Pieces</SelectItem>
-                  <SelectItem value="kg">Kilograms</SelectItem>
-                  <SelectItem value="g">Grams</SelectItem>
-                  <SelectItem value="l">Liters</SelectItem>
-                  <SelectItem value="ml">Milliliters</SelectItem>
-                  <SelectItem value="m">Meters</SelectItem>
-                  <SelectItem value="cm">Centimeters</SelectItem>
-                  <SelectItem value="boxes">Boxes</SelectItem>
-                  <SelectItem value="packs">Packs</SelectItem>
+                  {unitsLoading ? (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading units...</div>
+                  ) : unitsOfMeasure && unitsOfMeasure.length > 0 ? (
+                    unitsOfMeasure.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.name} ({unit.abbreviation})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No units available</div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
