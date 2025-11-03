@@ -175,6 +175,46 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
     setShowCreateCategory(false);
   };
 
+  const handleCreateUnit = async () => {
+    if (!newUnitName.trim()) {
+      toast.error('Unit name is required');
+      return;
+    }
+
+    if (!newUnitAbbr.trim()) {
+      toast.error('Unit abbreviation is required');
+      return;
+    }
+
+    if (!currentCompany?.id) {
+      toast.error('Company not found');
+      return;
+    }
+
+    setIsCreatingUnit(true);
+    try {
+      const newUnit = await createUnitMutation.mutateAsync({
+        company_id: currentCompany.id,
+        name: newUnitName,
+        abbreviation: newUnitAbbr,
+        is_active: true,
+        sort_order: (unitsOfMeasure?.length || 0) + 1
+      });
+
+      handleInputChange('unit_of_measure', newUnit.id);
+      setNewUnitName('');
+      setNewUnitAbbr('');
+      setShowCreateUnit(false);
+      toast.success(`Unit "${newUnitName}" created successfully!`);
+    } catch (error) {
+      console.error('Error creating unit of measure:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create unit of measure';
+      toast.error(errorMessage);
+    } finally {
+      setIsCreatingUnit(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
