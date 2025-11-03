@@ -2339,8 +2339,10 @@ export const usePaymentMethods = (companyId?: string) => {
         .order('sort_order', { ascending: true });
 
       if (error) {
-        console.error('Error fetching payment methods:', error);
-        throw error;
+        const errorMessage = error?.message || JSON.stringify(error);
+        console.error('Error fetching payment methods:', errorMessage);
+        console.error('Full error details:', error);
+        throw new Error(`Failed to fetch payment methods: ${errorMessage}`);
       }
 
       // If no payment methods exist, seed the defaults
