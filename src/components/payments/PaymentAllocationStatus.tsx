@@ -26,11 +26,30 @@ export function PaymentAllocationStatus() {
     { name: 'Database Function', status: 'checking' },
     { name: 'User Profile', status: 'checking' }
   ]);
+  const [isFixing, setIsFixing] = useState(false);
 
   const updateCheck = (index: number, updates: Partial<StatusCheck>) => {
-    setChecks(prev => prev.map((check, i) => 
+    setChecks(prev => prev.map((check, i) =>
       i === index ? { ...check, ...updates } : check
     ));
+  };
+
+  const handleFixDatabaseFunction = async () => {
+    setIsFixing(true);
+    try {
+      const result = await setupPaymentSync();
+      if (result.success) {
+        updateCheck(1, { status: 'working', details: 'Function available' });
+        toast.success('Database function created successfully!');
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (err: any) {
+      toast.error(`Failed to create database function: ${err.message}`);
+      updateCheck(1, { status: 'error', details: 'Function creation failed' });
+    } finally {
+      setIsFixing(false);
+    }
   };
 
   useEffect(() => {
