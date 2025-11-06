@@ -181,7 +181,7 @@ export function ViewCustomerModal({ open, onOpenChange, customer, onEdit, onCrea
               <div className="flex items-center space-x-3">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <div className="font-medium">{customer.payment_terms || 30} days</div>
+                  <div className="font-medium">{customer.payment_terms === 0 ? 'Cash (Now)' : `${customer.payment_terms || 0} days`}</div>
                   <div className="text-sm text-muted-foreground">Payment Terms</div>
                 </div>
               </div>
