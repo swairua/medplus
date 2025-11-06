@@ -310,7 +310,7 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <p>Code: {generateCustomerCode()}</p>
                   <p>Credit Limit: KES {formData.credit_limit.toLocaleString()}</p>
-                  <p>Payment Terms: {formData.payment_terms} days</p>
+                  <p>Payment Terms: {formData.payment_terms === 0 ? 'Cash (Now)' : `${formData.payment_terms} days`}</p>
                   <p>Status: {formData.is_active ? 'Active' : 'Inactive'}</p>
                 </div>
               </div>
