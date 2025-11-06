@@ -47,7 +47,7 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
     city: '',
     country: 'Kenya',
     credit_limit: 100000,
-    payment_terms: 30,
+    payment_terms: 0,
     is_active: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
