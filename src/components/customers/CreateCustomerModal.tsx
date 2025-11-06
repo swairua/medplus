@@ -273,19 +273,20 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
 
               <div className="space-y-2">
                 <Label htmlFor="payment_terms">Payment Terms (Days)</Label>
-                <Select 
-                  value={formData.payment_terms.toString()} 
+                <Select
+                  value={formData.payment_terms.toString()}
                   onValueChange={(value) => handleInputChange('payment_terms', parseInt(value))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select payment terms" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="0">Cash (Now)</SelectItem>
                     <SelectItem value="14">14 days</SelectItem>
-                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="45">45 days</SelectItem>
                     <SelectItem value="60">60 days</SelectItem>
-                    <SelectItem value="90">90 days</SelectItem>
+                    <SelectItem value="120">120 days</SelectItem>
+                    <SelectItem value="180">Up to 180 days</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
