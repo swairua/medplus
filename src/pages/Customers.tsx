@@ -465,7 +465,7 @@ export default function Customers() {
                       {formatCurrency(customer.credit_limit || 0)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {customer.payment_terms || 30} days
+                      {customer.payment_terms === 0 ? 'Cash (Now)' : `${customer.payment_terms || 0} days`}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getStatusColor(customer.is_active !== false)}>
