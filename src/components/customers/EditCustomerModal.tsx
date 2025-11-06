@@ -61,7 +61,7 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
     city: '',
     country: 'Kenya',
     credit_limit: 0,
-    payment_terms: 30,
+    payment_terms: 0,
     is_active: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,7 +78,7 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
         city: customer.city || '',
         country: customer.country || 'Kenya',
         credit_limit: customer.credit_limit || 0,
-        payment_terms: customer.payment_terms || 30,
+        payment_terms: customer.payment_terms || 0,
         is_active: customer.is_active !== false,
       });
     }
@@ -253,19 +253,20 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
 
               <div className="space-y-2">
                 <Label htmlFor="payment_terms">Payment Terms (Days)</Label>
-                <Select 
-                  value={formData.payment_terms.toString()} 
+                <Select
+                  value={formData.payment_terms.toString()}
                   onValueChange={(value) => handleInputChange('payment_terms', parseInt(value))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select payment terms" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="0">Cash (Now)</SelectItem>
                     <SelectItem value="14">14 days</SelectItem>
-                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="45">45 days</SelectItem>
                     <SelectItem value="60">60 days</SelectItem>
-                    <SelectItem value="90">90 days</SelectItem>
+                    <SelectItem value="120">120 days</SelectItem>
+                    <SelectItem value="180">Up to 180 days</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -289,7 +290,7 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <p>Code: {customer?.customer_code}</p>
                   <p>Credit Limit: KES {formData.credit_limit.toLocaleString()}</p>
-                  <p>Payment Terms: {formData.payment_terms} days</p>
+                  <p>Payment Terms: {formData.payment_terms === 0 ? 'Cash (Now)' : `${formData.payment_terms} days`}</p>
                   <p>Status: {formData.is_active ? 'Active' : 'Inactive'}</p>
                 </div>
               </div>

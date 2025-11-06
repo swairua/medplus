@@ -113,7 +113,7 @@ const CustomerRow = React.memo(({
         {customer.credit_limit ? formatter.format(customer.credit_limit) : 'No limit'}
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {customer.payment_terms || 30} days
+        {customer.payment_terms === 0 ? 'Cash (Now)' : `${customer.payment_terms || 0} days`}
       </TableCell>
       <TableCell>
         <Badge variant="outline" className={getCustomerStatusColor(isActive)}>
