@@ -313,7 +313,10 @@ export const ViewProformaModal = ({
               Send Email
             </Button>
             {proforma.status !== 'converted' && (
-              <Button onClick={handleCreateInvoice}>
+              <Button
+                onClick={handleCreateInvoice}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 <Receipt className="h-4 w-4 mr-2" />
                 Convert to Invoice
               </Button>
