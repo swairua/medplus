@@ -27,11 +27,14 @@ import {
 } from 'lucide-react';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { useConvertQuotationToProforma, useConvertQuotationToInvoice, useDeleteQuotation } from '@/hooks/useQuotationItems';
+import { useDeleteQuotation } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
 import { CreateQuotationModal } from '@/components/quotations/CreateQuotationModal';
 import { ViewQuotationModal } from '@/components/quotations/ViewQuotationModal';
 import { EditQuotationModal } from '@/components/quotations/EditQuotationModal';
+import { ChangeQuotationStatusModal } from '@/components/quotations/ChangeQuotationStatusModal';
+import { ConvertQuotationToProformaModal } from '@/components/quotations/ConvertQuotationToProformaModal';
+import { ConvertQuotationToInvoiceModal } from '@/components/quotations/ConvertQuotationToInvoiceModal';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
 
 interface Quotation {
@@ -78,6 +81,9 @@ export default function Quotations() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showConvertProformaModal, setShowConvertProformaModal] = useState(false);
+  const [showConvertInvoiceModal, setShowConvertInvoiceModal] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   
   // Get current user and company from context
@@ -85,8 +91,6 @@ export default function Quotations() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: quotations, isLoading, error, refetch } = useQuotations(currentCompany?.id);
-  const convertToProforma = useConvertQuotationToProforma();
-  const convertToInvoice = useConvertQuotationToInvoice();
   const deleteQuotation = useDeleteQuotation();
 
   const formatCurrency = (amount: number) => {
@@ -175,11 +179,7 @@ Website: www.biolegendscientific.co.ke`;
       const emailUrl = `mailto:${quotation.customers.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       window.open(emailUrl, '_blank');
 
-      // TODO: In a real app, this would actually send the email via API and update the quotation status
       toast.success(`Email client opened with quotation ${quotation.quotation_number} for ${quotation.customers.email}`);
-
-      // Update quotation status to 'sent' (simulated)
-      // await updateQuotationStatus(quotation.id, 'sent');
 
     } catch (error) {
       console.error('Error sending quotation:', error);
@@ -205,22 +205,24 @@ Website: www.biolegendscientific.co.ke`;
     }
   };
 
-  const handleConvertToProforma = async (quotation: Quotation) => {
-    try {
-      await convertToProforma.mutateAsync(quotation.id);
-      refetch();
-    } catch (error) {
-      console.error('Error converting quotation to proforma:', error);
-    }
+  const handleConvertToProforma = (quotation: Quotation) => {
+    setSelectedQuotation(quotation);
+    setShowConvertProformaModal(true);
   };
 
-  const handleConvertToInvoice = async (quotation: Quotation) => {
-    try {
-      await convertToInvoice.mutateAsync(quotation.id);
-      refetch();
-    } catch (error) {
-      console.error('Error converting quotation to invoice:', error);
-    }
+  const handleConvertToInvoice = (quotation: Quotation) => {
+    setSelectedQuotation(quotation);
+    setShowConvertInvoiceModal(true);
+  };
+
+  const handleConvertSuccess = () => {
+    refetch();
+    setSelectedQuotation(null);
+  };
+
+  const handleOpenStatusModal = (quotation: Quotation) => {
+    setSelectedQuotation(quotation);
+    setShowStatusModal(true);
   };
 
   const handleDeleteQuotation = async (quotation: Quotation) => {
@@ -450,10 +452,21 @@ Website: www.biolegendscientific.co.ke`;
                               size="sm"
                               onClick={() => handleSendQuotation(quotation)}
                               className="bg-primary-light text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground"
-                              disabled={convertToProforma.isPending || convertToInvoice.isPending}
                             >
                               <Send className="h-4 w-4 mr-1" />
                               <span className="hidden sm:inline">Send</span>
+                            </Button>
+                          )}
+                          {quotation.status !== 'converted' && quotation.status !== 'expired' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenStatusModal(quotation)}
+                              className="bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-600 hover:text-white"
+                              title="Change quotation status"
+                            >
+                              <span className="hidden sm:inline">Change Status</span>
+                              <span className="sm:hidden">Status</span>
                             </Button>
                           )}
                           {quotation.status !== 'converted' && (
@@ -463,7 +476,6 @@ Website: www.biolegendscientific.co.ke`;
                                 size="sm"
                                 onClick={() => handleConvertToProforma(quotation)}
                                 className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white"
-                                disabled={convertToProforma.isPending || convertToInvoice.isPending}
                                 title="Convert to Proforma Invoice"
                               >
                                 <FileText className="h-4 w-4 mr-1" />
@@ -474,7 +486,6 @@ Website: www.biolegendscientific.co.ke`;
                                 size="sm"
                                 onClick={() => handleConvertToInvoice(quotation)}
                                 className="bg-success-light text-success border-success/20 hover:bg-success hover:text-success-foreground"
-                                disabled={convertToProforma.isPending || convertToInvoice.isPending}
                                 title="Convert directly to Invoice"
                               >
                                 <Receipt className="h-4 w-4 mr-1" />
@@ -507,6 +518,9 @@ Website: www.biolegendscientific.co.ke`;
         onEdit={() => selectedQuotation && handleEditQuotation(selectedQuotation)}
         onDownload={() => selectedQuotation && handleDownloadQuotation(selectedQuotation)}
         onSend={() => selectedQuotation && handleSendQuotation(selectedQuotation)}
+        onChangeStatus={() => selectedQuotation && handleOpenStatusModal(selectedQuotation)}
+        onConvertToProforma={() => selectedQuotation && handleConvertToProforma(selectedQuotation)}
+        onConvertToInvoice={() => selectedQuotation && handleConvertToInvoice(selectedQuotation)}
         onDelete={() => selectedQuotation && handleDeleteQuotation(selectedQuotation)}
       />
 
@@ -515,6 +529,31 @@ Website: www.biolegendscientific.co.ke`;
         onOpenChange={setShowEditModal}
         quotation={selectedQuotation}
         onSuccess={handleEditSuccess}
+      />
+
+      <ChangeQuotationStatusModal
+        open={showStatusModal}
+        onOpenChange={setShowStatusModal}
+        quotationId={selectedQuotation?.id || ''}
+        currentStatus={selectedQuotation?.status || ''}
+        quotationNumber={selectedQuotation?.quotation_number || ''}
+        onSuccess={handleConvertSuccess}
+      />
+
+      <ConvertQuotationToProformaModal
+        open={showConvertProformaModal}
+        onOpenChange={setShowConvertProformaModal}
+        quotationId={selectedQuotation?.id || ''}
+        quotationNumber={selectedQuotation?.quotation_number || ''}
+        onSuccess={handleConvertSuccess}
+      />
+
+      <ConvertQuotationToInvoiceModal
+        open={showConvertInvoiceModal}
+        onOpenChange={setShowConvertInvoiceModal}
+        quotationId={selectedQuotation?.id || ''}
+        quotationNumber={selectedQuotation?.quotation_number || ''}
+        onSuccess={handleConvertSuccess}
       />
     </div>
   );

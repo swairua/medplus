@@ -43,6 +43,9 @@ interface ViewQuotationModalProps {
   onEdit: () => void;
   onDownload: () => void;
   onSend: () => void;
+  onChangeStatus?: () => void;
+  onConvertToProforma?: () => void;
+  onConvertToInvoice?: () => void;
   onDelete?: () => void;
 }
 
@@ -53,6 +56,9 @@ export function ViewQuotationModal({
   onEdit,
   onDownload,
   onSend,
+  onChangeStatus,
+  onConvertToProforma,
+  onConvertToInvoice,
   onDelete
 }: ViewQuotationModalProps) {
   if (!quotation) return null;
@@ -73,6 +79,18 @@ export function ViewQuotationModal({
     } catch (error) {
       console.error('Error deleting quotation:', error);
     }
+  };
+
+  const handleStatusClick = () => {
+    onChangeStatus?.();
+  };
+
+  const handleProformaClick = () => {
+    onConvertToProforma?.();
+  };
+
+  const handleInvoiceClick = () => {
+    onConvertToInvoice?.();
   };
 
   const formatCurrency = (amount: number) => {
@@ -133,6 +151,36 @@ export function ViewQuotationModal({
                 {quotation.status === 'draft' && (
                   <Button variant="outline" size="sm" onClick={onSend}>
                     <Send className="h-4 w-4" />
+                  </Button>
+                )}
+                {quotation.status !== 'converted' && quotation.status !== 'expired' && onChangeStatus && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStatusClick}
+                    className="text-yellow-700 hover:bg-yellow-50"
+                  >
+                    Status
+                  </Button>
+                )}
+                {quotation.status !== 'converted' && onConvertToProforma && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleProformaClick}
+                    className="text-blue-600 hover:bg-blue-50"
+                  >
+                    Proforma
+                  </Button>
+                )}
+                {quotation.status !== 'converted' && onConvertToInvoice && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleInvoiceClick}
+                    className="text-green-600 hover:bg-green-50"
+                  >
+                    Invoice
                   </Button>
                 )}
                 <Button

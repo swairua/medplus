@@ -28,7 +28,7 @@ import {
   Trash2,
   ArrowRightCircle
 } from 'lucide-react';
-import { useProformas, useConvertProformaToInvoice, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
+import { useProformas, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
 import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
@@ -36,6 +36,7 @@ import { EditProformaModal } from '@/components/proforma/EditProformaModal';
 import { ViewProformaModal } from '@/components/proforma/ViewProformaModal';
 import { ProformaSetupBanner } from '@/components/proforma/ProformaSetupBanner';
 import { ChangeProformaStatusModal } from '@/components/proforma/ChangeProformaStatusModal';
+import { ConvertProformaToInvoiceModal } from '@/components/proforma/ConvertProformaToInvoiceModal';
 import { downloadInvoicePDF, downloadQuotationPDF } from '@/utils/pdfGenerator';
 import { formatCurrency } from '@/utils/taxCalculation';
 import { ensureProformaSchema } from '@/utils/proformaDatabaseSetup';
@@ -46,6 +47,7 @@ export default function Proforma() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -56,7 +58,6 @@ export default function Proforma() {
 
   // Use proper proforma hooks
   const { data: proformas = [], isLoading, refetch } = useProformas(currentCompany?.id);
-  const convertToInvoice = useConvertProformaToInvoice();
   const deleteProforma = useDeleteProforma();
 
   const filteredProformas = proformas.filter(proforma =>
@@ -142,12 +143,16 @@ export default function Proforma() {
     toast.success(`Email client opened with proforma ${proforma.proforma_number}`);
   };
 
-  const handleCreateInvoice = async (proforma: ProformaWithItems) => {
-    try {
-      await convertToInvoice.mutateAsync(proforma.id!);
-    } catch (error) {
-      console.error('Error converting proforma to invoice:', error);
-    }
+  const handleCreateInvoice = (proforma: ProformaWithItems) => {
+    setSelectedProforma(proforma);
+    setShowConvertModal(true);
+  };
+
+  const handleConvertSuccess = (invoiceNumber: string) => {
+    refetch();
+    setSelectedProforma(null);
+    setShowViewModal(false);
+    toast.success(`Successfully converted to invoice ${invoiceNumber}`);
   };
 
   const handleAcceptProforma = async (proforma: ProformaWithItems) => {
@@ -422,6 +427,7 @@ export default function Proforma() {
                             size="sm"
                             onClick={() => handleCreateInvoice(proforma)}
                             title="Convert to Invoice"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           >
                             <Receipt className="h-4 w-4" />
                           </Button>
@@ -508,6 +514,14 @@ export default function Proforma() {
         proformaId={selectedProforma?.id || ''}
         currentStatus={selectedProforma?.status || ''}
         proformaNumber={selectedProforma?.proforma_number || ''}
+      />
+
+      <ConvertProformaToInvoiceModal
+        open={showConvertModal}
+        onOpenChange={setShowConvertModal}
+        proformaId={selectedProforma?.id || ''}
+        proformaNumber={selectedProforma?.proforma_number || ''}
+        onSuccess={handleConvertSuccess}
       />
 
     </div>

@@ -1079,3 +1079,59 @@ export const useDeleteQuotation = () => {
     },
   });
 };
+
+// Update quotation status
+export const useUpdateQuotationStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ quotationId, status, notes }: { quotationId: string; status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'; notes?: string }) => {
+      const updateData: any = { status };
+
+      if (notes) {
+        // Append note to existing notes
+        const { data: currentQuotation } = await supabase
+          .from('quotations')
+          .select('notes')
+          .eq('id', quotationId)
+          .single();
+
+        if (currentQuotation?.notes) {
+          updateData.notes = `${currentQuotation.notes}\n[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+        } else {
+          updateData.notes = `[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('quotations')
+        .update(updateData)
+        .eq('id', quotationId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+
+      const statusLabels: Record<string, string> = {
+        'draft': 'Draft',
+        'sent': 'Sent',
+        'accepted': 'Accepted',
+        'rejected': 'Rejected',
+        'expired': 'Expired',
+        'converted': 'Converted',
+      };
+
+      toast.success(`Quotation status changed to ${statusLabels[variables.status] || variables.status}`);
+    },
+    onError: (error) => {
+      const errorMessage = parseErrorMessageWithCodes(error, 'update quotation status');
+      console.error('Error updating quotation status:', errorMessage);
+      toast.error(`Failed to update status: ${errorMessage}`);
+    },
+  });
+};
