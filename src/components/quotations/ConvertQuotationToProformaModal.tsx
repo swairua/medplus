@@ -70,7 +70,10 @@ export function ConvertQuotationToProformaModal({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex gap-3">
-          <AlertDialogCancel disabled={isLoading}>
+          <AlertDialogCancel
+            onClick={handleCancel}
+            disabled={isLoading}
+          >
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
