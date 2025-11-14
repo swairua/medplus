@@ -28,7 +28,7 @@ import {
   Trash2,
   ArrowRightCircle
 } from 'lucide-react';
-import { useProformas, useConvertProformaToInvoice, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
+import { useProformas, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
 import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
