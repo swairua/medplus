@@ -43,10 +43,9 @@ export function SimpleLogin() {
     }
 
     const { error } = await signIn(formData.email, formData.password);
-    
+
     if (error) {
-      console.error('Sign in error:', error);
-      toast.error('Sign in failed. Please check your credentials.');
+      handleAuthError(error);
     } else {
       toast.success('Welcome to Medplus Africa!');
     }
