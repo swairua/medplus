@@ -141,7 +141,7 @@ export function ChangeQuotationStatusModal({
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={handleCancel}
             disabled={isLoading}
           >
             Cancel
