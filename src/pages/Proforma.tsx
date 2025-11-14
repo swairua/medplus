@@ -426,6 +426,7 @@ export default function Proforma() {
                             size="sm"
                             onClick={() => handleCreateInvoice(proforma)}
                             title="Convert to Invoice"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           >
                             <Receipt className="h-4 w-4" />
                           </Button>
