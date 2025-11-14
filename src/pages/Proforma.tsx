@@ -25,7 +25,8 @@ import {
   Receipt,
   FileText,
   CheckCircle,
-  Trash2
+  Trash2,
+  ArrowRightCircle
 } from 'lucide-react';
 import { useProformas, useConvertProformaToInvoice, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
