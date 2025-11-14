@@ -168,6 +168,11 @@ export default function Proforma() {
     toast.info('Advanced filter functionality coming soon!');
   };
 
+  const handleOpenStatusModal = (proforma: ProformaWithItems) => {
+    setSelectedProforma(proforma);
+    setShowStatusModal(true);
+  };
+
   const handleCreateSuccess = () => {
     refetch();
     setShowCreateModal(false);
