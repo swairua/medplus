@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logError, logWarning } from './errorLogger';
 
 /**
  * Clear corrupted auth tokens from localStorage
