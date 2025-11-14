@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { handleAuthError } from '@/utils/authErrorHandler';
 
 interface SignInModalProps {
   open: boolean;
