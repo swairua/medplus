@@ -740,3 +740,61 @@ export const useConvertProformaToInvoice = () => {
     },
   });
 };
+
+/**
+ * Hook to update proforma status
+ */
+export const useUpdateProformaStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ proformaId, status, notes }: { proformaId: string; status: ProformaInvoice['status']; notes?: string }) => {
+      const updateData: any = { status };
+
+      if (notes) {
+        // Append note to existing notes
+        const { data: currentProforma } = await supabase
+          .from('proforma_invoices')
+          .select('notes')
+          .eq('id', proformaId)
+          .single();
+
+        if (currentProforma?.notes) {
+          updateData.notes = `${currentProforma.notes}\n[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+        } else {
+          updateData.notes = `[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('proforma_invoices')
+        .update(updateData)
+        .eq('id', proformaId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['proforma_invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['proforma_invoice', variables.proformaId] });
+
+      const statusLabels: Record<string, string> = {
+        'draft': 'Draft',
+        'sent': 'Sent',
+        'accepted': 'Accepted',
+        'expired': 'Expired',
+        'converted': 'Converted to Invoice',
+      };
+
+      toast.success(`Proforma status changed to ${statusLabels[variables.status] || variables.status}`);
+    },
+    onError: (error) => {
+      const errorMessage = serializeError(error);
+      console.error('Error updating proforma status:', errorMessage);
+      toast.error(`Failed to update status: ${errorMessage}`);
+    },
+  });
+};
