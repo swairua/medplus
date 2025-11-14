@@ -150,9 +150,8 @@ export default function Proforma() {
   };
 
   const handleAcceptProforma = async (proforma: ProformaWithItems) => {
-    // TODO: Implement accept proforma mutation
-    toast.success(`Proforma ${proforma.proforma_number} marked as accepted`);
-    refetch();
+    setSelectedProforma(proforma);
+    setShowStatusModal(true);
   };
 
   const handleDeleteProforma = async (proforma: ProformaWithItems) => {
