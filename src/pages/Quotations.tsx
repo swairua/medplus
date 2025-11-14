@@ -179,11 +179,7 @@ Website: www.biolegendscientific.co.ke`;
       const emailUrl = `mailto:${quotation.customers.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       window.open(emailUrl, '_blank');
 
-      // TODO: In a real app, this would actually send the email via API and update the quotation status
       toast.success(`Email client opened with quotation ${quotation.quotation_number} for ${quotation.customers.email}`);
-
-      // Update quotation status to 'sent' (simulated)
-      // await updateQuotationStatus(quotation.id, 'sent');
 
     } catch (error) {
       console.error('Error sending quotation:', error);
@@ -209,22 +205,24 @@ Website: www.biolegendscientific.co.ke`;
     }
   };
 
-  const handleConvertToProforma = async (quotation: Quotation) => {
-    try {
-      await convertToProforma.mutateAsync(quotation.id);
-      refetch();
-    } catch (error) {
-      console.error('Error converting quotation to proforma:', error);
-    }
+  const handleConvertToProforma = (quotation: Quotation) => {
+    setSelectedQuotation(quotation);
+    setShowConvertProformaModal(true);
   };
 
-  const handleConvertToInvoice = async (quotation: Quotation) => {
-    try {
-      await convertToInvoice.mutateAsync(quotation.id);
-      refetch();
-    } catch (error) {
-      console.error('Error converting quotation to invoice:', error);
-    }
+  const handleConvertToInvoice = (quotation: Quotation) => {
+    setSelectedQuotation(quotation);
+    setShowConvertInvoiceModal(true);
+  };
+
+  const handleConvertSuccess = () => {
+    refetch();
+    setSelectedQuotation(null);
+  };
+
+  const handleOpenStatusModal = (quotation: Quotation) => {
+    setSelectedQuotation(quotation);
+    setShowStatusModal(true);
   };
 
   const handleDeleteQuotation = async (quotation: Quotation) => {
