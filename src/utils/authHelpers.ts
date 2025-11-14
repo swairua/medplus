@@ -158,7 +158,7 @@ export const initializeAuth = async () => {
       const hasConnectivity = await Promise.race([connectivityCheck, connectivityTimeout]);
 
       if (!hasConnectivity) {
-        console.warn('🌐 No connectivity to Supabase, skipping auth');
+        logWarning('🌐 No connectivity to Supabase, skipping auth', 'No connectivity', { context: 'initializeAuth' });
         clearTimeout(timeoutId);
         return { session: null, error: new Error('No connectivity') };
       }
