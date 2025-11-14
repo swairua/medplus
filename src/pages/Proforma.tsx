@@ -502,6 +502,14 @@ export default function Proforma() {
         onCreateInvoice={handleCreateInvoice}
       />
 
+      <ChangeProformaStatusModal
+        open={showStatusModal}
+        onOpenChange={setShowStatusModal}
+        proformaId={selectedProforma?.id || ''}
+        currentStatus={selectedProforma?.status || ''}
+        proformaNumber={selectedProforma?.proforma_number || ''}
+      />
+
     </div>
   );
 }
