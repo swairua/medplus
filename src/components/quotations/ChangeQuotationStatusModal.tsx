@@ -54,6 +54,10 @@ export function ChangeQuotationStatusModal({
     setNewStatus(value);
   };
 
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
+
   const handleSubmit = async () => {
     if (!newStatus) {
       toast.error('Please select a status');
@@ -66,7 +70,7 @@ export function ChangeQuotationStatusModal({
         status: newStatus as any,
         notes: notes.trim() || undefined,
       });
-      
+
       // Reset form
       setNewStatus('');
       setNotes('');
