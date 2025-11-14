@@ -171,13 +171,13 @@ export const initializeAuth = async () => {
       if (sessionError?.message?.includes('Invalid Refresh Token') ||
           sessionError?.message?.includes('Refresh Token Not Found') ||
           sessionError?.message?.includes('invalid_token')) {
-        console.warn('Invalid tokens detected, clearing...');
+        logWarning('Invalid tokens detected, clearing...', sessionError, { context: 'initializeAuth' });
         clearAuthTokens();
         return { session: null, error: null };
       }
 
       if (sessionError) {
-        console.warn('Session error:', sessionError.message);
+        logWarning('Session error:', sessionError, { context: 'initializeAuth' });
         return { session: null, error: sessionError };
       }
 
@@ -189,7 +189,7 @@ export const initializeAuth = async () => {
 
       // Handle timeout
       if (fetchError.name === 'AbortError') {
-        console.warn('⏱️ Auth request timed out (background)');
+        logWarning('⏱️ Auth request timed out (background)', fetchError, { context: 'initializeAuth' });
         return { session: null, error: new Error('Auth request timeout') };
       }
 
@@ -197,7 +197,7 @@ export const initializeAuth = async () => {
       if (fetchError.message?.includes('Failed to fetch') ||
           fetchError.message?.includes('Network request failed') ||
           fetchError.message?.includes('fetch')) {
-        console.warn('🌐 Network error during auth (background):', fetchError.message);
+        logWarning('🌐 Network error during auth (background):', fetchError, { context: 'initializeAuth' });
         return { session: null, error: new Error('Network connectivity issue') };
       }
 
@@ -205,7 +205,7 @@ export const initializeAuth = async () => {
     }
 
   } catch (error: any) {
-    console.warn('⚠️ Background auth check failed:', error);
+    logWarning('⚠️ Background auth check failed:', error, { context: 'initializeAuth' });
     return { session: null, error: error };
   }
 };
