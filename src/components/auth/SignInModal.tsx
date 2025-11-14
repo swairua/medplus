@@ -60,8 +60,10 @@ export function SignInModal({
     }
 
     const { error } = await signIn(formData.email, formData.password);
-    
-    if (!error) {
+
+    if (error) {
+      handleAuthError(error);
+    } else {
       onOpenChange(false);
       setFormData({ email: '', password: '' });
       setFormErrors({});
