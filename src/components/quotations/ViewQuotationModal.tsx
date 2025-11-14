@@ -56,6 +56,9 @@ export function ViewQuotationModal({
   onEdit,
   onDownload,
   onSend,
+  onChangeStatus,
+  onConvertToProforma,
+  onConvertToInvoice,
   onDelete
 }: ViewQuotationModalProps) {
   if (!quotation) return null;
