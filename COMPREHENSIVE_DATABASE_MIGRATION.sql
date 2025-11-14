@@ -33,7 +33,7 @@ END $$;
 
 -- Document status enumeration
 DO $$ BEGIN
-    CREATE TYPE document_status AS ENUM ('draft', 'pending', 'approved', 'sent', 'paid', 'partial', 'overdue', 'cancelled', 'expired', 'accepted', 'rejected');
+    CREATE TYPE document_status AS ENUM ('draft', 'pending', 'approved', 'sent', 'paid', 'partial', 'overdue', 'cancelled', 'expired', 'accepted', 'rejected', 'converted');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
