@@ -452,10 +452,21 @@ Website: www.biolegendscientific.co.ke`;
                               size="sm"
                               onClick={() => handleSendQuotation(quotation)}
                               className="bg-primary-light text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground"
-                              disabled={convertToProforma.isPending || convertToInvoice.isPending}
                             >
                               <Send className="h-4 w-4 mr-1" />
                               <span className="hidden sm:inline">Send</span>
+                            </Button>
+                          )}
+                          {quotation.status !== 'converted' && quotation.status !== 'expired' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenStatusModal(quotation)}
+                              className="bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-600 hover:text-white"
+                              title="Change quotation status"
+                            >
+                              <span className="hidden sm:inline">Change Status</span>
+                              <span className="sm:hidden">Status</span>
                             </Button>
                           )}
                           {quotation.status !== 'converted' && (
@@ -465,7 +476,6 @@ Website: www.biolegendscientific.co.ke`;
                                 size="sm"
                                 onClick={() => handleConvertToProforma(quotation)}
                                 className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white"
-                                disabled={convertToProforma.isPending || convertToInvoice.isPending}
                                 title="Convert to Proforma Invoice"
                               >
                                 <FileText className="h-4 w-4 mr-1" />
@@ -476,7 +486,6 @@ Website: www.biolegendscientific.co.ke`;
                                 size="sm"
                                 onClick={() => handleConvertToInvoice(quotation)}
                                 className="bg-success-light text-success border-success/20 hover:bg-success hover:text-success-foreground"
-                                disabled={convertToProforma.isPending || convertToInvoice.isPending}
                                 title="Convert directly to Invoice"
                               >
                                 <Receipt className="h-4 w-4 mr-1" />
