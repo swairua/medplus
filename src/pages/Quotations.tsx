@@ -91,8 +91,6 @@ export default function Quotations() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: quotations, isLoading, error, refetch } = useQuotations(currentCompany?.id);
-  const convertToProforma = useConvertQuotationToProforma();
-  const convertToInvoice = useConvertQuotationToInvoice();
   const deleteQuotation = useDeleteQuotation();
 
   const formatCurrency = (amount: number) => {
