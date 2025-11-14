@@ -518,6 +518,9 @@ Website: www.biolegendscientific.co.ke`;
         onEdit={() => selectedQuotation && handleEditQuotation(selectedQuotation)}
         onDownload={() => selectedQuotation && handleDownloadQuotation(selectedQuotation)}
         onSend={() => selectedQuotation && handleSendQuotation(selectedQuotation)}
+        onChangeStatus={() => selectedQuotation && handleOpenStatusModal(selectedQuotation)}
+        onConvertToProforma={() => selectedQuotation && handleConvertToProforma(selectedQuotation)}
+        onConvertToInvoice={() => selectedQuotation && handleConvertToInvoice(selectedQuotation)}
         onDelete={() => selectedQuotation && handleDeleteQuotation(selectedQuotation)}
       />
 
