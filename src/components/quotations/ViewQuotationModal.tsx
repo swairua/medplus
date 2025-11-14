@@ -43,6 +43,9 @@ interface ViewQuotationModalProps {
   onEdit: () => void;
   onDownload: () => void;
   onSend: () => void;
+  onChangeStatus?: () => void;
+  onConvertToProforma?: () => void;
+  onConvertToInvoice?: () => void;
   onDelete?: () => void;
 }
 
