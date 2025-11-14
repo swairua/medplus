@@ -112,7 +112,17 @@ export const safeAuthOperation = async <T>(
       return { data: null, error: tokenError };
     }
     
-    return { data: null, error: error as Error };
+    // Convert error to proper Error object if it's not already
+    if (error instanceof Error) {
+      return { data: null, error };
+    }
+
+    // If it's a Supabase error or other object with message, wrap it
+    const errorMessage = (error && typeof error === 'object' && 'message' in error)
+      ? (error as any).message
+      : String(error);
+
+    return { data: null, error: new Error(errorMessage) };
   }
 };
 
