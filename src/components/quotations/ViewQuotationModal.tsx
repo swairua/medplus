@@ -141,6 +141,36 @@ export function ViewQuotationModal({
                     <Send className="h-4 w-4" />
                   </Button>
                 )}
+                {quotation.status !== 'converted' && quotation.status !== 'expired' && onChangeStatus && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onChangeStatus}
+                    className="text-yellow-700 hover:bg-yellow-50"
+                  >
+                    Status
+                  </Button>
+                )}
+                {quotation.status !== 'converted' && onConvertToProforma && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onConvertToProforma}
+                    className="text-blue-600 hover:bg-blue-50"
+                  >
+                    Proforma
+                  </Button>
+                )}
+                {quotation.status !== 'converted' && onConvertToInvoice && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onConvertToInvoice}
+                    className="text-green-600 hover:bg-green-50"
+                  >
+                    Invoice
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
