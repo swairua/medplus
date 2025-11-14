@@ -157,7 +157,7 @@ export function ViewQuotationModal({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={onChangeStatus}
+                    onClick={handleStatusClick}
                     className="text-yellow-700 hover:bg-yellow-50"
                   >
                     Status
@@ -167,7 +167,7 @@ export function ViewQuotationModal({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={onConvertToProforma}
+                    onClick={handleProformaClick}
                     className="text-blue-600 hover:bg-blue-50"
                   >
                     Proforma
@@ -177,7 +177,7 @@ export function ViewQuotationModal({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={onConvertToInvoice}
+                    onClick={handleInvoiceClick}
                     className="text-green-600 hover:bg-green-50"
                   >
                     Invoice
