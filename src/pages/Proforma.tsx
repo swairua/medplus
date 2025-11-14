@@ -151,6 +151,7 @@ export default function Proforma() {
   const handleConvertSuccess = (invoiceNumber: string) => {
     refetch();
     setSelectedProforma(null);
+    setShowViewModal(false);
     toast.success(`Successfully converted to invoice ${invoiceNumber}`);
   };
 
