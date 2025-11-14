@@ -426,6 +426,16 @@ export default function Proforma() {
                             <Receipt className="h-4 w-4" />
                           </Button>
                         )}
+                        {proforma.status !== 'converted' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenStatusModal(proforma)}
+                            title="Change Status"
+                          >
+                            <ArrowRightCircle className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="ghost" size="sm" title="Delete proforma" className="text-destructive">
