@@ -102,12 +102,9 @@ export function analyzeAuthError(error: AuthError | Error): AuthErrorInfo {
 
 export function handleAuthError(error: AuthError | Error): AuthErrorInfo {
   const errorInfo = analyzeAuthError(error);
-  
+
   // Log for debugging (stringify original error for clarity)
   try {
-    // Import parseErrorMessage to extract readable text
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { parseErrorMessage } = require('./errorHelpers');
     const original = parseErrorMessage(error);
     console.error('Authentication error:', {
       type: errorInfo.type,
@@ -118,7 +115,8 @@ export function handleAuthError(error: AuthError | Error): AuthErrorInfo {
     console.error('Authentication error:', {
       type: errorInfo.type,
       message: errorInfo.message,
-      originalError: String(error)
+      originalError: String(error),
+      parseError: logErr instanceof Error ? logErr.message : 'Unknown parse error'
     });
   }
 
