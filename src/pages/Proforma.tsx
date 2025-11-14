@@ -515,6 +515,14 @@ export default function Proforma() {
         proformaNumber={selectedProforma?.proforma_number || ''}
       />
 
+      <ConvertProformaToInvoiceModal
+        open={showConvertModal}
+        onOpenChange={setShowConvertModal}
+        proformaId={selectedProforma?.id || ''}
+        proformaNumber={selectedProforma?.proforma_number || ''}
+        onSuccess={handleConvertSuccess}
+      />
+
     </div>
   );
 }
