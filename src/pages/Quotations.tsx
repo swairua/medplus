@@ -527,6 +527,31 @@ Website: www.biolegendscientific.co.ke`;
         quotation={selectedQuotation}
         onSuccess={handleEditSuccess}
       />
+
+      <ChangeQuotationStatusModal
+        open={showStatusModal}
+        onOpenChange={setShowStatusModal}
+        quotationId={selectedQuotation?.id || ''}
+        currentStatus={selectedQuotation?.status || ''}
+        quotationNumber={selectedQuotation?.quotation_number || ''}
+        onSuccess={handleConvertSuccess}
+      />
+
+      <ConvertQuotationToProformaModal
+        open={showConvertProformaModal}
+        onOpenChange={setShowConvertProformaModal}
+        quotationId={selectedQuotation?.id || ''}
+        quotationNumber={selectedQuotation?.quotation_number || ''}
+        onSuccess={handleConvertSuccess}
+      />
+
+      <ConvertQuotationToInvoiceModal
+        open={showConvertInvoiceModal}
+        onOpenChange={setShowConvertInvoiceModal}
+        quotationId={selectedQuotation?.id || ''}
+        quotationNumber={selectedQuotation?.quotation_number || ''}
+        onSuccess={handleConvertSuccess}
+      />
     </div>
   );
 }
