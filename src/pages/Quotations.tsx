@@ -27,11 +27,14 @@ import {
 } from 'lucide-react';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { useConvertQuotationToProforma, useConvertQuotationToInvoice, useDeleteQuotation } from '@/hooks/useQuotationItems';
+import { useDeleteQuotation } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
 import { CreateQuotationModal } from '@/components/quotations/CreateQuotationModal';
 import { ViewQuotationModal } from '@/components/quotations/ViewQuotationModal';
 import { EditQuotationModal } from '@/components/quotations/EditQuotationModal';
+import { ChangeQuotationStatusModal } from '@/components/quotations/ChangeQuotationStatusModal';
+import { ConvertQuotationToProformaModal } from '@/components/quotations/ConvertQuotationToProformaModal';
+import { ConvertQuotationToInvoiceModal } from '@/components/quotations/ConvertQuotationToInvoiceModal';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
 
 interface Quotation {
