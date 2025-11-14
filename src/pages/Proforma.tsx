@@ -144,12 +144,15 @@ export default function Proforma() {
     toast.success(`Email client opened with proforma ${proforma.proforma_number}`);
   };
 
-  const handleCreateInvoice = async (proforma: ProformaWithItems) => {
-    try {
-      await convertToInvoice.mutateAsync(proforma.id!);
-    } catch (error) {
-      console.error('Error converting proforma to invoice:', error);
-    }
+  const handleCreateInvoice = (proforma: ProformaWithItems) => {
+    setSelectedProforma(proforma);
+    setShowConvertModal(true);
+  };
+
+  const handleConvertSuccess = (invoiceNumber: string) => {
+    refetch();
+    setSelectedProforma(null);
+    toast.success(`Successfully converted to invoice ${invoiceNumber}`);
   };
 
   const handleAcceptProforma = async (proforma: ProformaWithItems) => {
