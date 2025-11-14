@@ -81,6 +81,18 @@ export function ViewQuotationModal({
     }
   };
 
+  const handleStatusClick = () => {
+    onChangeStatus?.();
+  };
+
+  const handleProformaClick = () => {
+    onConvertToProforma?.();
+  };
+
+  const handleInvoiceClick = () => {
+    onConvertToInvoice?.();
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
