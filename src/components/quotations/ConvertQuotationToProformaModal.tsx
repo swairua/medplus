@@ -32,11 +32,15 @@ export function ConvertQuotationToProformaModal({
   const handleConfirm = async () => {
     try {
       const result = await convertToProforma.mutateAsync(quotationId);
-      onSuccess?.(result.proforma_number);
       onOpenChange(false);
+      onSuccess?.(result.proforma_number);
     } catch (error) {
       console.error('Conversion failed:', error);
     }
+  };
+
+  const handleCancel = () => {
+    onOpenChange(false);
   };
 
   return (
