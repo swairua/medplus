@@ -103,7 +103,7 @@ CREATE TABLE products (
 );
 
 -- Document status enum
-CREATE TYPE document_status AS ENUM ('draft', 'pending', 'approved', 'sent', 'paid', 'cancelled', 'overdue');
+CREATE TYPE document_status AS ENUM ('draft', 'pending', 'approved', 'sent', 'paid', 'partial', 'cancelled', 'overdue', 'accepted', 'expired', 'converted', 'rejected');
 
 -- Document types enum
 CREATE TYPE document_type AS ENUM ('quotation', 'invoice', 'proforma', 'delivery_note', 'credit_note', 'debit_note');
