@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { toast } from 'sonner';
+import { handleAuthError } from '@/utils/authErrorHandler';
 
 export function SimpleLogin() {
   const { signIn, loading } = useAuth();
@@ -42,10 +43,9 @@ export function SimpleLogin() {
     }
 
     const { error } = await signIn(formData.email, formData.password);
-    
+
     if (error) {
-      console.error('Sign in error:', error);
-      toast.error('Sign in failed. Please check your credentials.');
+      handleAuthError(error);
     } else {
       toast.success('Welcome to Medplus Africa!');
     }

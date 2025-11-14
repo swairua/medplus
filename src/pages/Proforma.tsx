@@ -25,7 +25,8 @@ import {
   Receipt,
   FileText,
   CheckCircle,
-  Trash2
+  Trash2,
+  ArrowRightCircle
 } from 'lucide-react';
 import { useProformas, useConvertProformaToInvoice, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
@@ -34,6 +35,7 @@ import { CreateProformaModalOptimized } from '@/components/proforma/CreateProfor
 import { EditProformaModal } from '@/components/proforma/EditProformaModal';
 import { ViewProformaModal } from '@/components/proforma/ViewProformaModal';
 import { ProformaSetupBanner } from '@/components/proforma/ProformaSetupBanner';
+import { ChangeProformaStatusModal } from '@/components/proforma/ChangeProformaStatusModal';
 import { downloadInvoicePDF, downloadQuotationPDF } from '@/utils/pdfGenerator';
 import { formatCurrency } from '@/utils/taxCalculation';
 import { ensureProformaSchema } from '@/utils/proformaDatabaseSetup';
@@ -43,6 +45,7 @@ export default function Proforma() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -148,9 +151,8 @@ export default function Proforma() {
   };
 
   const handleAcceptProforma = async (proforma: ProformaWithItems) => {
-    // TODO: Implement accept proforma mutation
-    toast.success(`Proforma ${proforma.proforma_number} marked as accepted`);
-    refetch();
+    setSelectedProforma(proforma);
+    setShowStatusModal(true);
   };
 
   const handleDeleteProforma = async (proforma: ProformaWithItems) => {
@@ -165,6 +167,11 @@ export default function Proforma() {
 
   const handleFilter = () => {
     toast.info('Advanced filter functionality coming soon!');
+  };
+
+  const handleOpenStatusModal = (proforma: ProformaWithItems) => {
+    setSelectedProforma(proforma);
+    setShowStatusModal(true);
   };
 
   const handleCreateSuccess = () => {
@@ -419,6 +426,16 @@ export default function Proforma() {
                             <Receipt className="h-4 w-4" />
                           </Button>
                         )}
+                        {proforma.status !== 'converted' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenStatusModal(proforma)}
+                            title="Change Status"
+                          >
+                            <ArrowRightCircle className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="ghost" size="sm" title="Delete proforma" className="text-destructive">
@@ -483,6 +500,14 @@ export default function Proforma() {
         onDownloadPDF={handleDownloadPDF}
         onSendEmail={handleSendEmail}
         onCreateInvoice={handleCreateInvoice}
+      />
+
+      <ChangeProformaStatusModal
+        open={showStatusModal}
+        onOpenChange={setShowStatusModal}
+        proformaId={selectedProforma?.id || ''}
+        currentStatus={selectedProforma?.status || ''}
+        proformaNumber={selectedProforma?.proforma_number || ''}
       />
 
     </div>
