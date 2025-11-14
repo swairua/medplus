@@ -32,11 +32,15 @@ export function ConvertQuotationToInvoiceModal({
   const handleConfirm = async () => {
     try {
       const result = await convertToInvoice.mutateAsync(quotationId);
-      onSuccess?.(result.invoice_number);
       onOpenChange(false);
+      onSuccess?.(result.invoice_number);
     } catch (error) {
       console.error('Conversion failed:', error);
     }
+  };
+
+  const handleCancel = () => {
+    onOpenChange(false);
   };
 
   return (
