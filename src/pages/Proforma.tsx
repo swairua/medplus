@@ -44,6 +44,7 @@ export default function Proforma() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
