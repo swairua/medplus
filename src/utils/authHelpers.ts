@@ -30,7 +30,7 @@ export const clearAuthTokens = () => {
     console.log('✅ Cleared all auth tokens');
     return true;
   } catch (error) {
-    console.error('Error clearing auth tokens:', error);
+    logError('Error clearing auth tokens:', error, { context: 'clearAuthTokens' });
     return false;
   }
 };
