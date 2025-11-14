@@ -81,6 +81,9 @@ export default function Quotations() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showConvertProformaModal, setShowConvertProformaModal] = useState(false);
+  const [showConvertInvoiceModal, setShowConvertInvoiceModal] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   
   // Get current user and company from context
