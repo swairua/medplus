@@ -306,6 +306,37 @@ Website: www.biolegendscientific.co.ke`;
     toast.success('Filters cleared');
   };
 
+  const handleReconcileBalances = async () => {
+    if (!currentCompany?.id) {
+      toast.error('Company not found');
+      return;
+    }
+
+    setIsReconciling(true);
+    try {
+      const result = await reconcileAllInvoiceBalances(currentCompany.id, true);
+
+      if (result.mismatched > 0) {
+        toast.success(
+          `Reconciliation complete: ${result.fixed} invoices fixed, ${result.mismatched - result.fixed} issues found`
+        );
+      } else {
+        toast.success('All invoices are balanced correctly!');
+      }
+
+      if (result.errors.length > 0) {
+        console.warn('Reconciliation warnings:', result.errors);
+      }
+
+      refetch();
+    } catch (error) {
+      console.error('Error reconciling balances:', error);
+      toast.error('Failed to reconcile invoice balances');
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
   if (error) {
     return (
       <div className="space-y-6">
