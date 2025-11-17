@@ -207,7 +207,7 @@ export const EditProformaModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.customer_id) {
       toast.error('Please select a customer');
       return;
@@ -218,26 +218,41 @@ export const EditProformaModal = ({
       return;
     }
 
-    try {
-      const totals = calculateTotals();
-      
-      // Update proforma (implement API call here)
-      const updatedProformaData = {
-        ...proforma,
-        customer_id: formData.customer_id,
-        proforma_date: formData.proforma_date,
-        valid_until: formData.valid_until,
-        status: formData.status,
-        subtotal: totals.subtotal,
-        tax_amount: totals.totalTax,
-        total_amount: totals.total,
-        notes: formData.notes,
-        terms_and_conditions: formData.terms_and_conditions,
-        proforma_items: items,
-      };
+    if (!proforma?.id) {
+      toast.error('Invalid proforma ID');
+      return;
+    }
 
-      // For now, show success message (would implement API call here)
-      toast.success('Proforma invoice updated successfully!');
+    try {
+      // Prepare items for mutation - filter out temp IDs and format properly
+      const itemsToUpdate = items.map(item => ({
+        id: item.id,
+        product_id: item.product_id,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        tax_percentage: item.tax_percentage,
+        tax_amount: item.tax_amount,
+        tax_inclusive: item.tax_inclusive,
+        line_total: item.line_total,
+        discount_percentage: 0,
+        discount_amount: 0,
+      }));
+
+      // Call the mutation to update proforma
+      await updateProforma.mutateAsync({
+        proformaId: proforma.id,
+        proforma: {
+          customer_id: formData.customer_id,
+          proforma_date: formData.proforma_date,
+          valid_until: formData.valid_until,
+          status: formData.status,
+          notes: formData.notes,
+          terms_and_conditions: formData.terms_and_conditions,
+        },
+        items: itemsToUpdate,
+      });
+
       onSuccess?.();
       handleClose();
     } catch (error) {
