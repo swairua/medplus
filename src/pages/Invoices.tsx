@@ -477,6 +477,14 @@ Website: www.biolegendscientific.co.ke`;
                 </div>
               </PopoverContent>
             </Popover>
+            <Button
+              variant="outline"
+              onClick={handleReconcileBalances}
+              disabled={isReconciling || isLoading}
+              title="Check and fix invoice balance discrepancies"
+            >
+              {isReconciling ? 'Reconciling...' : 'Reconcile Balances'}
+            </Button>
           </div>
         </CardContent>
       </Card>
