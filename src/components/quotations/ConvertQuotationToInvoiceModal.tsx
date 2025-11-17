@@ -51,23 +51,25 @@ export function ConvertQuotationToInvoiceModal({
             <ArrowRight className="h-5 w-5" />
             Convert to Invoice
           </AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <p>
-              This will convert quotation <strong>{quotationNumber}</strong> directly to an invoice.
-            </p>
-            <div className="bg-green-50 dark:bg-green-950 p-3 rounded text-sm space-y-1">
-              <p className="font-medium text-green-900 dark:text-green-100">This action will:</p>
-              <ul className="list-disc list-inside text-green-800 dark:text-green-200">
-                <li>Create a new invoice with status "Sent"</li>
-                <li>Generate an invoice number</li>
-                <li>Copy all items and amounts from the quotation</li>
-                <li>Create stock movements for inventory tracking</li>
-                <li>Mark the quotation as "Converted"</li>
-              </ul>
+          <AlertDialogDescription>
+            <div className="space-y-2">
+              <p>
+                This will convert quotation <strong>{quotationNumber}</strong> directly to an invoice.
+              </p>
+              <div className="bg-green-50 dark:bg-green-950 p-3 rounded text-sm space-y-1">
+                <p className="font-medium text-green-900 dark:text-green-100">This action will:</p>
+                <ul className="list-disc list-inside text-green-800 dark:text-green-200">
+                  <li>Create a new invoice with status "Sent"</li>
+                  <li>Generate an invoice number</li>
+                  <li>Copy all items and amounts from the quotation</li>
+                  <li>Create stock movements for inventory tracking</li>
+                  <li>Mark the quotation as "Converted"</li>
+                </ul>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                This action cannot be undone. The quotation will be locked from further editing.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              This action cannot be undone. The quotation will be locked from further editing.
-            </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex gap-3">
