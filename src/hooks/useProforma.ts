@@ -659,18 +659,9 @@ export const useConvertProformaToInvoice = () => {
           line_total: item.line_total,
         }));
 
-        let { error: itemsError } = await supabase
+        const { error: itemsError } = await supabase
           .from('invoice_items')
           .insert(invoiceItems);
-
-        // Fallback: remove discount_before_vat if schema doesn't have it
-        if (itemsError && (itemsError.code === 'PGRST204' || String(itemsError.message || '').toLowerCase().includes('discount_before_vat'))) {
-          const minimalItems = invoiceItems.map(({ discount_before_vat, ...rest }) => rest);
-          const retry = await supabase
-            .from('invoice_items')
-            .insert(minimalItems);
-          itemsError = retry.error as any;
-        }
 
         if (itemsError) throw itemsError;
 
