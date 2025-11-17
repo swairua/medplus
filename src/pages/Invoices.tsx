@@ -95,6 +95,7 @@ export default function Invoices() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDeliveryNoteModal, setShowDeliveryNoteModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isReconciling, setIsReconciling] = useState(false);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState('all');
