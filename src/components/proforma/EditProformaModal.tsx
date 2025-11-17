@@ -551,11 +551,14 @@ export const EditProformaModal = ({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={updateProforma.isPending}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!formData.customer_id || items.length === 0}>
-              Update Proforma
+            <Button
+              type="submit"
+              disabled={!formData.customer_id || items.length === 0 || updateProforma.isPending}
+            >
+              {updateProforma.isPending ? 'Updating...' : 'Update Proforma'}
             </Button>
           </DialogFooter>
         </form>
