@@ -653,13 +653,10 @@ export const useConvertProformaToInvoice = () => {
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          discount_percentage: item.discount_percentage,
-          discount_before_vat: 0,
           tax_percentage: item.tax_percentage,
           tax_amount: item.tax_amount,
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
-          sort_order: item.sort_order || 1
         }));
 
         let { error: itemsError } = await supabase
