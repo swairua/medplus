@@ -97,6 +97,7 @@ export const EditProformaModal = ({
   const { data: customers } = useCustomers(companyId);
   const { data: products } = useProducts(companyId);
   const { data: taxSettings } = useTaxSettings(companyId);
+  const updateProforma = useUpdateProforma();
 
   const defaultTaxRate = taxSettings?.find(t => t.is_default)?.rate || 0;
 
