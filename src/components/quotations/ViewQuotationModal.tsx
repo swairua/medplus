@@ -61,14 +61,14 @@ export function ViewQuotationModal({
   onConvertToInvoice,
   onDelete
 }: ViewQuotationModalProps) {
-  if (!quotation) return null;
-
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteQuotation = useDeleteQuotation();
 
   // Get company data for logo
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
+
+  if (!quotation) return null;
 
   const handleDeleteConfirm = async () => {
     try {
