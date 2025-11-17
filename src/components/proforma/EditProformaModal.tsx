@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
 import { useCreateQuotationWithItems } from '@/hooks/useQuotationItems';
+import { useUpdateProforma } from '@/hooks/useProforma';
 import { toast } from 'sonner';
 
 interface ProformaItem {
