@@ -49,6 +49,7 @@ import { ViewInvoiceModal } from '@/components/invoices/ViewInvoiceModal';
 import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { downloadInvoicePDF } from '@/utils/pdfGenerator';
+import { reconcileAllInvoiceBalances } from '@/utils/balanceReconciliation';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Invoice {
@@ -94,6 +95,7 @@ export default function Invoices() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDeliveryNoteModal, setShowDeliveryNoteModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isReconciling, setIsReconciling] = useState(false);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState('all');
@@ -304,6 +306,37 @@ Website: www.biolegendscientific.co.ke`;
     toast.success('Filters cleared');
   };
 
+  const handleReconcileBalances = async () => {
+    if (!currentCompany?.id) {
+      toast.error('Company not found');
+      return;
+    }
+
+    setIsReconciling(true);
+    try {
+      const result = await reconcileAllInvoiceBalances(currentCompany.id, true);
+
+      if (result.mismatched > 0) {
+        toast.success(
+          `Reconciliation complete: ${result.fixed} invoices fixed, ${result.mismatched - result.fixed} issues found`
+        );
+      } else {
+        toast.success('All invoices are balanced correctly!');
+      }
+
+      if (result.errors.length > 0) {
+        console.warn('Reconciliation warnings:', result.errors);
+      }
+
+      refetch();
+    } catch (error) {
+      console.error('Error reconciling balances:', error);
+      toast.error('Failed to reconcile invoice balances');
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
   if (error) {
     return (
       <div className="space-y-6">
@@ -444,6 +477,14 @@ Website: www.biolegendscientific.co.ke`;
                 </div>
               </PopoverContent>
             </Popover>
+            <Button
+              variant="outline"
+              onClick={handleReconcileBalances}
+              disabled={isReconciling || isLoading}
+              title="Check and fix invoice balance discrepancies"
+            >
+              {isReconciling ? 'Reconciling...' : 'Reconcile Balances'}
+            </Button>
           </div>
         </CardContent>
       </Card>

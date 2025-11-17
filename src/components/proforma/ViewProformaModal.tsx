@@ -83,10 +83,10 @@ export const ViewProformaModal = ({
   onCreateInvoice,
   onDelete
 }: ViewProformaModalProps) => {
-  if (!proforma) return null;
-
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteProforma = useDeleteProforma();
+
+  if (!proforma) return null;
 
   const handleDeleteConfirm = async () => {
     try {
