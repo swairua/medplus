@@ -235,8 +235,6 @@ export const EditProformaModal = ({
         tax_amount: item.tax_amount,
         tax_inclusive: item.tax_inclusive,
         line_total: item.line_total,
-        discount_percentage: 0,
-        discount_amount: 0,
       }));
 
       // Call the mutation to update proforma
