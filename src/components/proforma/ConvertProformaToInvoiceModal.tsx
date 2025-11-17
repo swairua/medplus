@@ -47,23 +47,25 @@ export function ConvertProformaToInvoiceModal({
             <ArrowRight className="h-5 w-5" />
             Convert to Invoice
           </AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <p>
-              This will convert proforma invoice <strong>{proformaNumber}</strong> to a regular invoice.
-            </p>
-            <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded text-sm space-y-1">
-              <p className="font-medium text-blue-900 dark:text-blue-100">This action will:</p>
-              <ul className="list-disc list-inside text-blue-800 dark:text-blue-200">
-                <li>Create a new invoice with status "Sent"</li>
-                <li>Generate an invoice number</li>
-                <li>Copy all items and amounts from the proforma</li>
-                <li>Create stock movements for inventory tracking</li>
-                <li>Mark the proforma as "Converted"</li>
-              </ul>
+          <AlertDialogDescription>
+            <div className="space-y-2">
+              <p>
+                This will convert proforma invoice <strong>{proformaNumber}</strong> to a regular invoice.
+              </p>
+              <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded text-sm space-y-1">
+                <p className="font-medium text-blue-900 dark:text-blue-100">This action will:</p>
+                <ul className="list-disc list-inside text-blue-800 dark:text-blue-200">
+                  <li>Create a new invoice with status "Sent"</li>
+                  <li>Generate an invoice number</li>
+                  <li>Copy all items and amounts from the proforma</li>
+                  <li>Create stock movements for inventory tracking</li>
+                  <li>Mark the proforma as "Converted"</li>
+                </ul>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                This action cannot be undone. The proforma will be locked from further editing.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              This action cannot be undone. The proforma will be locked from further editing.
-            </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex gap-3">
