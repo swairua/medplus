@@ -450,6 +450,14 @@ export default function DeliveryNotes() {
         onSendEmail={handleSendEmail}
         onMarkDelivered={handleMarkDelivered}
       />
+
+      <DeleteDeliveryNoteModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        deliveryNote={selectedDeliveryNote}
+        isDeleting={deleteDeliveryNote.isPending}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
