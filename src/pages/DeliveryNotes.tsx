@@ -42,6 +42,7 @@ import { mapDeliveryNoteForDisplay } from '@/utils/deliveryNoteMapper';
 export default function DeliveryNotes() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -50,6 +51,7 @@ export default function DeliveryNotes() {
   const currentCompany = companies?.[0];
   const { data: deliveryNotes, isLoading, error } = useDeliveryNotes(currentCompany?.id);
   const updateDeliveryNote = useUpdateDeliveryNote();
+  const deleteDeliveryNote = useDeleteDeliveryNote();
 
   const mappedDeliveryNotes = deliveryNotes?.map(mapDeliveryNoteForDisplay) || [];
 
