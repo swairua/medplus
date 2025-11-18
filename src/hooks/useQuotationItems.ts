@@ -877,6 +877,145 @@ export const useCreateDeliveryNote = () => {
   });
 };
 
+// Delete delivery note (reverses stock movements and cleans up entries)
+export const useDeleteDeliveryNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (deliveryNoteId: string) => {
+      // Check permission before deletion
+      const { profile } = await (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.id) throw new Error('Not authenticated');
+
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role, permissions')
+          .eq('id', user.id)
+          .single();
+
+        return { profile: profileData };
+      })();
+
+      // Check if user has delete_delivery_note permission (or admin/stock_manager)
+      if (profile && profile.role !== 'admin' && profile.role !== 'stock_manager' && !profile.permissions?.includes('delete_delivery_note')) {
+        throw new Error('You do not have permission to delete delivery notes');
+      }
+
+      // Fetch delivery note and its items for cleanup
+      const { data: deliveryNote, error: deliveryError } = await supabase
+        .from('delivery_notes')
+        .select(`
+          *,
+          delivery_note_items(*)
+        `)
+        .eq('id', deliveryNoteId)
+        .single();
+
+      if (deliveryError) throw deliveryError;
+      if (!deliveryNote) throw new Error('Delivery note not found');
+
+      // Fetch stock movements related to this delivery note
+      const { data: stockMovements, error: movementsError } = await supabase
+        .from('stock_movements')
+        .select('*')
+        .eq('reference_id', deliveryNoteId)
+        .eq('reference_type', 'DELIVERY_NOTE');
+
+      if (movementsError) {
+        console.warn('Failed to fetch stock movements for reversal:', movementsError);
+      }
+
+      // Create reverse stock movements to restore inventory
+      const reverseMovements: any[] = [];
+      if (stockMovements && stockMovements.length > 0) {
+        for (const movement of stockMovements) {
+          reverseMovements.push({
+            company_id: movement.company_id,
+            product_id: movement.product_id,
+            movement_type: movement.movement_type === 'OUT' ? 'IN' : 'OUT',
+            reference_type: 'DELIVERY_NOTE_REVERSAL',
+            reference_id: deliveryNoteId,
+            quantity: -movement.quantity, // Reverse the quantity
+            cost_per_unit: movement.cost_per_unit,
+            notes: `Reversal of delivery note ${deliveryNote.delivery_number || deliveryNote.delivery_note_number}: ${movement.notes || 'Original delivery'}`
+          });
+        }
+      }
+
+      // Insert reverse movements first
+      if (reverseMovements.length > 0) {
+        const { error: reverseError } = await supabase
+          .from('stock_movements')
+          .insert(reverseMovements);
+
+        if (reverseError) {
+          console.warn('Failed to create reverse stock movements:', reverseError);
+        } else {
+          // Update product stock quantities for each reverse movement
+          for (const movement of reverseMovements) {
+            try {
+              await supabase.rpc('update_product_stock', {
+                product_uuid: movement.product_id,
+                movement_type: movement.movement_type,
+                quantity: Math.abs(movement.quantity)
+              });
+            } catch (e) {
+              console.warn(`Failed to update stock for product ${movement.product_id}:`, e);
+            }
+          }
+        }
+      }
+
+      // Delete delivery note items (cascaded, but explicit for clarity)
+      const { error: deleteItemsError } = await supabase
+        .from('delivery_note_items')
+        .delete()
+        .eq('delivery_note_id', deliveryNoteId);
+
+      if (deleteItemsError) {
+        console.warn('Failed to delete delivery note items:', deleteItemsError);
+      }
+
+      // Delete the original stock movements
+      const { error: deleteMovementsError } = await supabase
+        .from('stock_movements')
+        .delete()
+        .eq('reference_id', deliveryNoteId)
+        .eq('reference_type', 'DELIVERY_NOTE');
+
+      if (deleteMovementsError) {
+        console.warn('Failed to delete original stock movements:', deleteMovementsError);
+      }
+
+      // Delete the delivery note
+      const { error: deleteError } = await supabase
+        .from('delivery_notes')
+        .delete()
+        .eq('id', deliveryNoteId);
+
+      if (deleteError) {
+        const errorMessage = parseErrorMessageWithCodes(deleteError, 'delete delivery note');
+        console.error('Error deleting delivery note:', errorMessage);
+        throw new Error(`Failed to delete delivery note: ${errorMessage}`);
+      }
+
+      return deliveryNote;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['delivery_notes'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
+      toast.success(`Delivery note ${data.delivery_number || data.delivery_note_number} deleted successfully. Inventory has been readjusted.`);
+    },
+    onError: (error) => {
+      const errorMessage = parseErrorMessageWithCodes(error, 'delete delivery note');
+      console.error('Error deleting delivery note:', errorMessage);
+      toast.error(`Failed to delete delivery note: ${errorMessage}`);
+    },
+  });
+};
+
 // Convert quotation to proforma invoice
 export const useConvertQuotationToProforma = () => {
   const queryClient = useQueryClient();

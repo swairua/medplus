@@ -12,9 +12,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Filter,
   Eye,
   Edit,
@@ -26,19 +26,23 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadDeliveryNotePDF } from '@/utils/pdfGenerator';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { ViewDeliveryNoteModal } from '@/components/delivery/ViewDeliveryNoteModal';
+import { DeleteDeliveryNoteModal } from '@/components/delivery/DeleteDeliveryNoteModal';
 import { useDeliveryNotes, useUpdateDeliveryNote, useCompanies } from '@/hooks/useDatabase';
+import { useDeleteDeliveryNote } from '@/hooks/useQuotationItems';
 import { mapDeliveryNoteForDisplay } from '@/utils/deliveryNoteMapper';
 
 
 export default function DeliveryNotes() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -47,6 +51,7 @@ export default function DeliveryNotes() {
   const currentCompany = companies?.[0];
   const { data: deliveryNotes, isLoading, error } = useDeliveryNotes(currentCompany?.id);
   const updateDeliveryNote = useUpdateDeliveryNote();
+  const deleteDeliveryNote = useDeleteDeliveryNote();
 
   const mappedDeliveryNotes = deliveryNotes?.map(mapDeliveryNoteForDisplay) || [];
 
@@ -149,6 +154,19 @@ export default function DeliveryNotes() {
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
     toast.success('Delivery note created successfully!');
+  };
+
+  const handleDeleteClick = (deliveryNote: any) => {
+    setSelectedDeliveryNote(deliveryNote);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async (deliveryNoteId: string) => {
+    try {
+      await deleteDeliveryNote.mutateAsync(deliveryNoteId);
+    } catch (error) {
+      console.error('Error deleting delivery note:', error);
+    }
   };
 
   // Calculate stats
@@ -399,6 +417,14 @@ export default function DeliveryNotes() {
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(note)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -423,6 +449,14 @@ export default function DeliveryNotes() {
         onDownloadPDF={handleDownloadPDF}
         onSendEmail={handleSendEmail}
         onMarkDelivered={handleMarkDelivered}
+      />
+
+      <DeleteDeliveryNoteModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        deliveryNote={selectedDeliveryNote}
+        isDeleting={deleteDeliveryNote.isPending}
+        onConfirm={handleDelete}
       />
     </div>
   );
