@@ -156,6 +156,19 @@ export default function DeliveryNotes() {
     toast.success('Delivery note created successfully!');
   };
 
+  const handleDeleteClick = (deliveryNote: any) => {
+    setSelectedDeliveryNote(deliveryNote);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async (deliveryNoteId: string) => {
+    try {
+      await deleteDeliveryNote.mutateAsync(deliveryNoteId);
+    } catch (error) {
+      console.error('Error deleting delivery note:', error);
+    }
+  };
+
   // Calculate stats
   const totalDeliveryNotes = deliveryNotes?.length || 0;
   const inTransit = deliveryNotes?.filter(note => note.status === 'sent').length || 0;
