@@ -12,9 +12,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Filter,
   Eye,
   Edit,
@@ -26,13 +26,16 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadDeliveryNotePDF } from '@/utils/pdfGenerator';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { ViewDeliveryNoteModal } from '@/components/delivery/ViewDeliveryNoteModal';
+import { DeleteDeliveryNoteModal } from '@/components/delivery/DeleteDeliveryNoteModal';
 import { useDeliveryNotes, useUpdateDeliveryNote, useCompanies } from '@/hooks/useDatabase';
+import { useDeleteDeliveryNote } from '@/hooks/useQuotationItems';
 import { mapDeliveryNoteForDisplay } from '@/utils/deliveryNoteMapper';
 
 
