@@ -252,9 +252,39 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement actual update API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Prepare quotation data
+      const quotationData = {
+        customer_id: selectedCustomerId,
+        quotation_date: quotationDate,
+        valid_until: validUntil,
+        status: quotation.status || 'draft',
+        notes: notes,
+        terms_and_conditions: termsAndConditions,
+        subtotal: subtotal,
+        tax_amount: taxAmount,
+        total_amount: totalAmount,
+      };
+
+      // Prepare quotation items
+      const quotationItems = items.map(item => ({
+        product_id: item.product_id,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount_percentage: item.discount_percentage || 0,
+        tax_percentage: item.tax_percentage || 0,
+        tax_amount: item.tax_amount || 0,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: item.line_total,
+      }));
+
+      // Call the update hook
+      await updateQuotationWithItems.mutateAsync({
+        quotationId: quotation.id,
+        quotation: quotationData,
+        items: quotationItems as any
+      });
+
       toast.success(`Quotation ${quotation.quotation_number} updated successfully!`);
       onSuccess();
       onOpenChange(false);
