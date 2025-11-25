@@ -188,6 +188,33 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
     }));
   };
 
+  const addItem = (product: any) => {
+    const existingItem = items.find(item => item.product_id === product.id);
+
+    if (existingItem) {
+      // Increase quantity if item already exists
+      updateItemQuantity(existingItem.id, existingItem.quantity + 1);
+      return;
+    }
+
+    const newItem: QuotationItem = {
+      id: `temp-${Date.now()}`,
+      product_id: product.id,
+      product_name: product.name,
+      description: product.description || product.name,
+      quantity: 1,
+      unit_price: product.selling_price,
+      discount_percentage: 0,
+      tax_percentage: 0,
+      tax_amount: 0,
+      tax_inclusive: false,
+      line_total: product.selling_price
+    };
+
+    setItems([...items, newItem]);
+    setSearchProduct('');
+  };
+
   const removeItem = (itemId: string) => {
     setItems(items.filter(item => item.id !== itemId));
   };
