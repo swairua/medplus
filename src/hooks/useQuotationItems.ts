@@ -193,6 +193,71 @@ export const useCreateQuotationWithItems = () => {
   });
 };
 
+// Update quotation with items
+export const useUpdateQuotationWithItems = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ quotationId, quotation, items }: { quotationId: string; quotation: any; items: QuotationItem[] }) => {
+      // Update the quotation
+      const { data: updatedQuotation, error: updateError } = await supabase
+        .from('quotations')
+        .update({
+          customer_id: quotation.customer_id,
+          quotation_date: quotation.quotation_date,
+          valid_until: quotation.valid_until,
+          status: quotation.status || 'draft',
+          notes: quotation.notes,
+          terms_and_conditions: quotation.terms_and_conditions,
+          subtotal: quotation.subtotal,
+          tax_amount: quotation.tax_amount,
+          total_amount: quotation.total_amount,
+        })
+        .eq('id', quotationId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      // Delete existing quotation items
+      const { error: deleteError } = await supabase
+        .from('quotation_items')
+        .delete()
+        .eq('quotation_id', quotationId);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new quotation items
+      if (items.length > 0) {
+        const quotationItems = items.map((item, index) => ({
+          quotation_id: quotationId,
+          product_id: item.product_id,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_percentage: item.discount_percentage || 0,
+          tax_percentage: item.tax_percentage || 0,
+          tax_amount: item.tax_amount || 0,
+          tax_inclusive: item.tax_inclusive || false,
+          line_total: item.line_total,
+          sort_order: index + 1
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('quotation_items')
+          .insert(quotationItems);
+
+        if (itemsError) throw itemsError;
+      }
+
+      return updatedQuotation;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+    },
+  });
+};
+
 // Convert quotation to invoice
 export const useConvertQuotationToInvoice = () => {
   const queryClient = useQueryClient();

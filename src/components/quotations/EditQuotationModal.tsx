@@ -30,6 +30,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useCustomers, useProducts, useTaxSettings, useCompanies } from '@/hooks/useDatabase';
+import { useUpdateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
 
 interface QuotationItem {
@@ -69,6 +70,7 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
   const { data: customers, isLoading: loadingCustomers } = useCustomers(currentCompany?.id);
   const { data: products, isLoading: loadingProducts } = useProducts(currentCompany?.id);
   const { data: taxSettings } = useTaxSettings(currentCompany?.id);
+  const updateQuotationWithItems = useUpdateQuotationWithItems();
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
@@ -188,6 +190,33 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
     }));
   };
 
+  const addItem = (product: any) => {
+    const existingItem = items.find(item => item.product_id === product.id);
+
+    if (existingItem) {
+      // Increase quantity if item already exists
+      updateItemQuantity(existingItem.id, existingItem.quantity + 1);
+      return;
+    }
+
+    const newItem: QuotationItem = {
+      id: `temp-${Date.now()}`,
+      product_id: product.id,
+      product_name: product.name,
+      description: product.description || product.name,
+      quantity: 1,
+      unit_price: product.selling_price,
+      discount_percentage: 0,
+      tax_percentage: 0,
+      tax_amount: 0,
+      tax_inclusive: false,
+      line_total: product.selling_price
+    };
+
+    setItems([...items, newItem]);
+    setSearchProduct('');
+  };
+
   const removeItem = (itemId: string) => {
     setItems(items.filter(item => item.id !== itemId));
   };
@@ -223,9 +252,39 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement actual update API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Prepare quotation data
+      const quotationData = {
+        customer_id: selectedCustomerId,
+        quotation_date: quotationDate,
+        valid_until: validUntil,
+        status: quotation.status || 'draft',
+        notes: notes,
+        terms_and_conditions: termsAndConditions,
+        subtotal: subtotal,
+        tax_amount: taxAmount,
+        total_amount: totalAmount,
+      };
+
+      // Prepare quotation items
+      const quotationItems = items.map(item => ({
+        product_id: item.product_id,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount_percentage: item.discount_percentage || 0,
+        tax_percentage: item.tax_percentage || 0,
+        tax_amount: item.tax_amount || 0,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: item.line_total,
+      }));
+
+      // Call the update hook
+      await updateQuotationWithItems.mutateAsync({
+        quotationId: quotation.id,
+        quotation: quotationData,
+        items: quotationItems as any
+      });
+
       toast.success(`Quotation ${quotation.quotation_number} updated successfully!`);
       onSuccess();
       onOpenChange(false);
@@ -346,8 +405,61 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
             </Card>
           </div>
 
-          {/* Right Column - Summary */}
+          {/* Right Column - Add Products and Summary */}
           <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Add Products</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Product Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search products by name or code..."
+                      value={searchProduct}
+                      onChange={(e) => setSearchProduct(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+
+                  {/* Product List */}
+                  {searchProduct && (
+                    <div className="max-h-64 overflow-y-auto border rounded-lg">
+                      {loadingProducts ? (
+                        <div className="p-4 text-center text-muted-foreground">Loading products...</div>
+                      ) : filteredProducts.length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground">No products found</div>
+                      ) : (
+                        filteredProducts.map((product) => (
+                          <div
+                            key={product.id}
+                            className="p-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-smooth"
+                            onClick={() => addItem(product)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-medium">{product.name}</div>
+                                <div className="text-sm text-muted-foreground">{product.product_code}</div>
+                                {product.description && (
+                                  <div className="text-xs text-muted-foreground mt-1">{product.description}</div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className="font-semibold">{formatCurrency(product.selling_price)}</div>
+                                <div className="text-xs text-muted-foreground">Stock: {product.stock_quantity}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Quotation Summary</CardTitle>
