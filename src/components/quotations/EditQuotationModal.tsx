@@ -30,6 +30,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useCustomers, useProducts, useTaxSettings, useCompanies } from '@/hooks/useDatabase';
+import { useUpdateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
 
 interface QuotationItem {
