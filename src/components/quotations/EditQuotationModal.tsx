@@ -70,6 +70,7 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
   const { data: customers, isLoading: loadingCustomers } = useCustomers(currentCompany?.id);
   const { data: products, isLoading: loadingProducts } = useProducts(currentCompany?.id);
   const { data: taxSettings } = useTaxSettings(currentCompany?.id);
+  const updateQuotationWithItems = useUpdateQuotationWithItems();
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
